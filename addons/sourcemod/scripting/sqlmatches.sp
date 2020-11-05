@@ -47,7 +47,7 @@ public Plugin myinfo = {
 	name = "SQLMatches",
 	author = "The Doggy, ErikMinekus, WardPearce",
 	description = "Match stats and demo recording system for CS:GO",
-	version = "1.0.3",
+	version = "1.1.0",
 	url = "https://sqlmatches.com/"
 };
 
