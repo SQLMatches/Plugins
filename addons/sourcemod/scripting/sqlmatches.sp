@@ -73,12 +73,14 @@ void LoadCvarHttp() {
 
 	// Remove trailing backslash from '/api/'
 	int len = strlen(g_sApiUrl);
-	if(len > 0 && g_sApiUrl[len - 1] == "/")
+	if(len > 0 && g_sApiUrl[len - 1] == "/") {
 		g_sApiUrl[len - 1] = "\0";
+	}
 
 	// Log error about /api/
-	if(len > 0 && StrContains(g_sApiUrl[len - 4], "/api") == -1)
+	if(len > 0 && StrContains(g_sApiUrl[len - 4], "/api") == -1) {
 		LogMessage("The API route normally ends with '/api'");
+	}
 
 	// Create HTTP Client
 	g_Client = new HTTPClient(g_sApiUrl);
@@ -101,7 +103,7 @@ public void OnPluginStart() {
 	// Register ConVars
 	g_cvApiKey = CreateConVar("sm_sqlmatches_key", "", "API key for sqlmatches API", FCVAR_PROTECTED);
 	g_cvApiUrl = CreateConVar("sm_sqlmatches_url", "https://sqlmatches.com/api", "URL of sqlmatches base API route", FCVAR_PROTECTED);
-	g_cvEnableAutoConfig = CreateConVar("sm_sqlmatches_autoconfig", "1", "Used to auto config.", FCVAR_PROTECTED)
+	g_cvEnableAutoConfig = CreateConVar("sm_sqlmatches_autoconfig", "1", "Used to auto config.", FCVAR_PROTECTED);
 
 	g_cvApiUrl.AddChangeHook(OnAPIChanged);
 	g_cvApiKey.AddChangeHook(OnAPIChanged);
@@ -337,12 +339,15 @@ void UpdateMatch(int team_1_score = -1, int team_2_score = -1, const MatchUpdate
 	}
 
 	// Set optional data
-	if(team_1_side != -1)
+	if(team_1_side != -1) {
 		json.SetInt("team_1_side", team_1_side);
-	if(team_2_side != -1)
+	}
+	if(team_2_side != -1) {
 		json.SetInt("team_2_side", team_2_side);
-	if(end)
+	}
+	if(end) {
 		json.SetBool("end", end);
+	}
 
 	// Format request
 	char sUrl[1024];
@@ -375,28 +380,24 @@ void HTTP_OnUpdateMatch(HTTPResponse response, any value, const char[] error) {
 }
 
 void UploadDemo(const char[] demoName) {
-	if(strlen(g_sApiUrl) == 0)
-	{
+	if(strlen(g_sApiUrl) == 0) {
 		LogError("Failed to upload demo. Error: ConVar sm_sqlmatches_url cannot be empty.");
 		return;
 	}
 
-	if(strlen(g_sApiKey) == 0)
-	{
+	if(strlen(g_sApiKey) == 0) {
 		LogError("Failed to upload demo. Error: ConVar sm_sqlmatches_key cannot be empty.");
 		return;
 	}
 
 	char formattedDemo[128];
 	Format(formattedDemo, sizeof(formattedDemo), "%s.dem", demoName);
-	if(!FileExists(formattedDemo))
-	{
+	if(!FileExists(formattedDemo)) {
 		LogError("Failed to upload demo. Error: File \"%s\" does not exist.", formattedDemo);
 		return;
 	}
 
-	if(FileSize(formattedDemo) < 5000024)
-	{
+	if(FileSize(formattedDemo) < 5000024) {
 		LogError("Demo file must be larger then 5 mb.");
 		return;
 	}
@@ -412,8 +413,7 @@ void UploadDemo(const char[] demoName) {
 }
 
 void HTTP_OnUploadDemo(HTTPStatus status, DataPack pack, const char[] error) {
-	if(strlen(error) > 0 || status != HTTPStatus_OK)
-	{
+	if(strlen(error) > 0 || status != HTTPStatus_OK) {
 		LogError("HTTP_OnUploadDemo Failed! Error: %s", error);
 		return;
 	}
@@ -440,8 +440,7 @@ public void Event_PlayerHurt(Event event, const char[] name, bool dontBroadcast)
 	int Client = GetClientOfUserId(event.GetInt("attacker"));
 	if(!InMatch() || !IsValidClient(Client)) return;
 
-	if(event.GetInt("hitgroup") >= 0)
-	{
+	if(event.GetInt("hitgroup") >= 0) {
 		g_PlayerStats[Client].ShotsHit++;
 		if(event.GetInt("hitgroup") == 1) g_PlayerStats[Client].Headshots++;
 	}
@@ -451,16 +450,15 @@ public void Event_PlayerHurt(Event event, const char[] name, bool dontBroadcast)
 public void Event_HalfTime(Event event, const char[] name, bool dontBroadcast) {
 	if(!InMatch()) return;
 
-	if (!g_bAlreadySwapped)
-	{
+	if (!g_bAlreadySwapped) {
 		LogMessage("Event_HalfTime(): Starting team swap...");
 
 		UpdateMatch(.team_1_side = 1, .team_2_side = 0, .players = g_PlayerStats, .dontUpdate = false);
 
 		g_bAlreadySwapped = true;
-	}
-	else
+	} else {
 		LogError("Event_HalfTime(): Teams have already been swapped!");
+	}
 }
 
 public Action Event_PlayerDisconnect(Event event, const char[] name, bool dontBroadcast) {
@@ -489,8 +487,10 @@ public Action Event_MatchEnd(Event event, const char[] name, bool dontBroadcast)
 	if(!InMatch()) return;
 
 	UpdateMatch(.players = g_PlayerStats, .size = sizeof(g_PlayerStats), .end = true);
-	if(FindConVar("tv_enable").IntValue == 1)
+	if(FindConVar("tv_enable").IntValue == 1) {
 		UploadDemo(g_sMatchId);
+	}
+
 	g_sMatchId = "";
 }
 
@@ -510,8 +510,7 @@ stock void UpdatePlayerStats(MatchUpdatePlayer[] players, int size) {
 	int ent = FindEntityByClassname(-1, "cs_player_manager");
 
 	// Iterate over players array and update values for every client
-	for(int i = 0; i < size; i++)
-	{
+	for(int i = 0; i < size; i++) {
 		int Client = players[i].Index;
 		if(!IsValidClient(Client)) continue;
 
@@ -537,8 +536,7 @@ stock void UpdatePlayerStats(MatchUpdatePlayer[] players, int size) {
 stock JSONArray GetPlayersJson(const MatchUpdatePlayer[] players, int size) {
 	JSONArray json = new JSONArray();
 
-	for(int i = 0; i < size; i++)
-	{
+	for(int i = 0; i < size; i++) {
 		if(!IsValidClient(players[i].Index)) continue;
 		JSONObject player = new JSONObject();
 
@@ -570,7 +568,9 @@ stock bool IsValidClient(int client) {
 	IsClientConnected(client) &&
 	IsClientInGame(client) &&
 	!IsFakeClient(client) &&
-	(GetClientTeam(client) == CS_TEAM_CT || GetClientTeam(client) == CS_TEAM_T))
+	(GetClientTeam(client) == CS_TEAM_CT || GetClientTeam(client) == CS_TEAM_T)) {
 		return true;
+	}
+
 	return false;
 }
