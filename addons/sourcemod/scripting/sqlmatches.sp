@@ -377,7 +377,7 @@ void UploadDemo(const char[] demoName) {
 	// Send request
 	g_Client.UploadFile(sUrl, formattedDemo, HTTP_OnUploadDemo);
 
-	PrintToServer("%s Uploading demo...", PREFIX);
+	PrintToChatAll("%s Uploading demo...", PREFIX);
 }
 
 void HTTP_OnUploadDemo(HTTPStatus status, DataPack pack, const char[] error) {
@@ -386,7 +386,7 @@ void HTTP_OnUploadDemo(HTTPStatus status, DataPack pack, const char[] error) {
 		return;
 	}
 
-	PrintToServer("%s Demo uploaded successfully.", PREFIX);
+	PrintToChatAll("%s Demo uploaded successfully.", PREFIX);
 }
 
 public void Event_RoundEnd(Event event, const char[] name, bool dontBroadcast) {
