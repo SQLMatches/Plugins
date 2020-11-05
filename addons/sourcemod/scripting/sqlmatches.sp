@@ -16,10 +16,11 @@ bool g_bAlreadySwapped;
 
 char g_sApiUrl[512];
 char g_sApiKey[64];
-char g_sMatchId[128];
+char g_sMatchId[32];
 
 ConVar g_cvApiUrl;
 ConVar g_cvApiKey;
+ConVar g_cvEnableAutoConfig;
 
 HTTPClient g_Client;
 
@@ -79,7 +80,6 @@ void LoadCvarHttp() {
 	if(len > 0 && StrContains(g_sApiUrl[len - 4], "/api") == -1)
 		LogMessage("The API route normally ends with '/api'");
 
-
 	// Create HTTP Client
 	g_Client = new HTTPClient(g_sApiUrl);
 	g_Client.SetHeader("Content-Type:", "application/json");
@@ -99,10 +99,12 @@ public void OnPluginStart() {
 	HookEvent("cs_win_panel_match", Event_MatchEnd);
 
 	// Register ConVars
-	g_cvApiKey = CreateConVar("sm_sqlmatches_key", "<API KEY>", "API key for sqlmatches API", FCVAR_PROTECTED);
-	g_cvApiKey.AddChangeHook(OnAPIChanged);
+	g_cvApiKey = CreateConVar("sm_sqlmatches_key", "", "API key for sqlmatches API", FCVAR_PROTECTED);
 	g_cvApiUrl = CreateConVar("sm_sqlmatches_url", "https://sqlmatches.com/api", "URL of sqlmatches base API route", FCVAR_PROTECTED);
+	g_cvEnableAutoConfig = CreateConVar("sm_sqlmatches_autoconfig", "1", "Used to auto config.", FCVAR_PROTECTED)
+
 	g_cvApiUrl.AddChangeHook(OnAPIChanged);
+	g_cvApiKey.AddChangeHook(OnAPIChanged);
 
 	AutoExecConfig(true, "sqlmatches");
 
@@ -111,6 +113,15 @@ public void OnPluginStart() {
 	// Register commands
 	RegConsoleCmd("sm_creatematch", Command_CreateMatch, "Creates a match");
 	RegConsoleCmd("sm_endmatch", Command_EndMatch, "Ends a match");
+}
+
+public void OnMapStart() {
+	if (g_cvEnableAutoConfig.BoolValue == 1) {
+		ServerCommand("tv_enable 1");
+		ServerCommand("tv_autorecord 0");
+		ServerCommand("sv_hibernate_when_empty 0");
+		ServerCommand("mp_endmatch_votenextmap 20");
+	}
 }
 
 public void Event_RoundStart(Event event, const char[] name, bool dontBroadcast) {
@@ -185,8 +196,8 @@ void CreateMatch() {
 		FindConVar("mp_teamname_1").GetString(sTeamNameCT, sizeof(sTeamNameCT));
 		FindConVar("mp_teamname_2").GetString(sTeamNameT, sizeof(sTeamNameT));
 	} else {
-		sTeamNameCT = "1";
-		sTeamNameT = "2";
+		GetTeamName(CS_TEAM_CT, sTeamNameCT, sizeof(sTeamNameCT));
+		GetTeamName(CS_TEAM_T, sTeamNameT, sizeof(sTeamNameT));
 	}
 
 	json.SetString("team_1_name", sTeamNameCT);
@@ -212,8 +223,7 @@ void CreateMatch() {
 }
 
 void HTTP_OnCreateMatch(HTTPResponse response, any value, const char[] error) {
-	if(strlen(error) > 0)
-	{
+	if(strlen(error) > 0) {
 		LogError("HTTP_OnCreateMatch - Error string - Failed! Error: %s", error);
 		return;
 	}
@@ -246,14 +256,12 @@ void HTTP_OnCreateMatch(HTTPResponse response, any value, const char[] error) {
 void EndMatch() {
 	if(!InMatch()) return;
 
-	if(strlen(g_sApiUrl) == 0)
-	{
+	if(strlen(g_sApiUrl) == 0) {
 		LogError("Failed to end match. Error: ConVar sm_sqlmatches_url cannot be empty.");
 		return;
 	}
 
-	if(strlen(g_sApiKey) == 0)
-	{
+	if(strlen(g_sApiKey) == 0) {
 		LogError("Failed to end match. Error: ConVar sm_sqlmatches_key cannot be empty.");
 		return;
 	}
@@ -267,8 +275,7 @@ void EndMatch() {
 }
 
 void HTTP_OnEndMatch(HTTPResponse response, any value, const char[] error) {
-	if(strlen(error) > 0)
-	{
+	if(strlen(error) > 0) {
 		LogError("HTTP_OnEndMatch - Error string - Failed! Error: %s", error);
 		return;
 	}
@@ -277,8 +284,7 @@ void HTTP_OnEndMatch(HTTPResponse response, any value, const char[] error) {
 	JSONObject responseData = view_as<JSONObject>(response.Data);
 
 	// Log errors if any occurred
-	if(response.Status != HTTPStatus_OK)
-	{
+	if(response.Status != HTTPStatus_OK) {
 		// Error string
 		char errorInfo[1024];
 		responseData.GetString("error", errorInfo, sizeof(errorInfo));
@@ -288,9 +294,11 @@ void HTTP_OnEndMatch(HTTPResponse response, any value, const char[] error) {
 
 	// End match
 	PrintToServer("%s Match ended successfully.", PREFIX);
-	PrintToChatAll("%s Match has ended, stats will no longer be recorded.", PREFIX);
+	PrintToChatAll("%s Match has ended.", PREFIX);
+
 	if(FindConVar("tv_enable").IntValue == 1)
 		UploadDemo(g_sMatchId);
+
 	g_sMatchId = "";
 }
 
@@ -346,8 +354,7 @@ void UpdateMatch(int team_1_score = -1, int team_2_score = -1, const MatchUpdate
 }
 
 void HTTP_OnUpdateMatch(HTTPResponse response, any value, const char[] error) {
-	if(strlen(error) > 0)
-	{
+	if(strlen(error) > 0) {
 		LogError("HTTP_OnUpdateMatch - Error string - Failed! Error: %s", error);
 		return;
 	}
@@ -356,8 +363,7 @@ void HTTP_OnUpdateMatch(HTTPResponse response, any value, const char[] error) {
 	JSONObject responseData = view_as<JSONObject>(response.Data);
 
 	// Log errors if any occurred
-	if(response.Status != HTTPStatus_OK)
-	{
+	if(response.Status != HTTPStatus_OK) {
 		// Error string
 		char errorInfo[1024];
 		responseData.GetString("error", errorInfo, sizeof(errorInfo));
