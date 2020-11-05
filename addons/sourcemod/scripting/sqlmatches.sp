@@ -217,8 +217,7 @@ void HTTP_OnCreateMatch(HTTPResponse response, any value, const char[] error) {
 	JSONObject responseData = view_as<JSONObject>(response.Data);
 
 	// Log errors if any occurred
-	if(response.Status != HTTPStatus_OK)
-	{
+	if(response.Status != HTTPStatus_OK) {
 		char errorInfo[1024];
 		responseData.GetString("error", errorInfo, sizeof(errorInfo));
 		LogError("HTTP_OnCreateMatch - Invalid status code - Failed! Error: %s", errorInfo);
@@ -276,8 +275,9 @@ void HTTP_OnEndMatch(HTTPResponse response, any value, const char[] error) {
 	PrintToServer("%s Match ended successfully.", PREFIX);
 	PrintToChatAll("%s Match has ended.", PREFIX);
 
-	if(FindConVar("tv_enable").IntValue == 1)
+	if(FindConVar("tv_enable").IntValue == 1) {
 		UploadDemo(g_sMatchId);
+	}
 
 	g_sMatchId = "";
 }
@@ -285,23 +285,24 @@ void HTTP_OnEndMatch(HTTPResponse response, any value, const char[] error) {
 void UpdateMatch(int team_1_score = -1, int team_2_score = -1, const MatchUpdatePlayer[] players, int size = -1, bool dontUpdate = false, int team_1_side = -1, int team_2_side = -1, bool end = false) {
 	if(!InMatch() && end == false) return;
 
-	if(strlen(g_sApiUrl) == 0)
-	{
+	if(strlen(g_sApiUrl) == 0) {
 		LogError("Failed to update match. Error: ConVar sm_sqlmatches_url cannot be empty.");
 		return;
 	}
 
-	if(strlen(g_sApiKey) == 0)
-	{
+	if(strlen(g_sApiKey) == 0) {
 		LogError("Failed to update match. Error: ConVar sm_sqlmatches_key cannot be empty.");
 		return;
 	}
 
 	// Set scores if not passed in manually
-	if(team_1_score == -1)
+	if(team_1_score == -1) {
 		team_1_score = CS_GetTeamScore(CS_TEAM_CT);
-	if(team_2_score == -1)
+	}
+
+	if(team_2_score == -1) {
 		team_2_score = CS_GetTeamScore(CS_TEAM_T);
+	}
 
 	// Create and set json data
 	JSONObject json = new JSONObject();
@@ -309,8 +310,7 @@ void UpdateMatch(int team_1_score = -1, int team_2_score = -1, const MatchUpdate
 	json.SetInt("team_2_score", team_2_score);
 
 	// Format and set players data
-	if(!dontUpdate)
-	{
+	if(!dontUpdate) {
 		JSONArray playersArray = GetPlayersJson(players, size);
 		json.Set("players", playersArray);
 		delete playersArray;
