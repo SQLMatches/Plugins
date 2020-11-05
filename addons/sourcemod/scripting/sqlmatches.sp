@@ -23,8 +23,7 @@ ConVar g_cvApiKey;
 
 HTTPClient g_Client;
 
-enum struct MatchUpdatePlayer
-{
+enum struct MatchUpdatePlayer {
 	int Index;
 	char Username[42];
 	char SteamID[64];
@@ -44,8 +43,7 @@ enum struct MatchUpdatePlayer
 
 MatchUpdatePlayer g_PlayerStats[MAXPLAYERS + 1];
 
-public Plugin myinfo =
-{
+public Plugin myinfo = {
 	name = "SQLMatches",
 	author = "The Doggy, ErikMinekus, WardPearce",
 	description = "Match stats and demo recording system for CS:GO",
@@ -53,26 +51,44 @@ public Plugin myinfo =
 	url = "https://sqlmatches.com/"
 };
 
-public void OnAllPluginsLoaded()
-{
+public void OnAllPluginsLoaded() {
 	g_bPugSetupAvailable = LibraryExists("pugsetup");
 	g_bGet5Available = LibraryExists("get5");
 }
 
-public void OnLibraryAdded(const char[] name)
-{
+public void OnLibraryAdded(const char[] name) {
 	if(StrEqual(name, "pugsetup")) g_bPugSetupAvailable = true;
 	if(StrEqual(name, "get5")) g_bGet5Available = true;
 }
 
-public void OnLibraryRemoved(const char[] name)
-{
+public void OnLibraryRemoved(const char[] name) {
 	if(StrEqual(name, "pugsetup")) g_bPugSetupAvailable = false;
 	if(StrEqual(name, "get5")) g_bGet5Available = false;
 }
 
-public void OnPluginStart()
-{
+void LoadCvarHttp() {
+	g_cvApiKey.GetString(g_sApiKey, sizeof(g_sApiKey));
+	g_cvApiUrl.GetString(g_sApiUrl, sizeof(g_sApiUrl));
+
+	// Remove trailing backslash from '/api/'
+	int len = strlen(g_sApiUrl);
+	if(len > 0 && g_sApiUrl[len - 1] == '/')
+		g_sApiUrl[len - 1] = '\0';
+
+	// Log error about /api/
+	if(len > 0 && StrContains(g_sApiUrl[len - 4], "/api") == -1)
+		LogMessage("The API route normally ends with '/api'");
+
+
+	// Create HTTP Client
+	g_Client = new HTTPClient(g_sApiUrl);
+	g_Client.SetHeader("Content-Type:", "application/json");
+	g_Client.FollowLocation = true;
+	g_Client.ConnectTimeout = 300;
+	g_Client.Timeout = 300;
+}
+
+public void OnPluginStart() {
 	//Hook Events
 	HookEvent("round_start", Event_RoundStart);
 	HookEvent("round_end", Event_RoundEnd);
@@ -88,84 +104,35 @@ public void OnPluginStart()
 	g_cvApiUrl = CreateConVar("sm_sqlmatches_url", "https://sqlmatches.com/api", "URL of sqlmatches base API route", FCVAR_PROTECTED);
 	g_cvApiUrl.AddChangeHook(OnAPIChanged);
 
-	g_cvApiKey.GetString(g_sApiKey, sizeof(g_sApiKey));
-	g_cvApiUrl.GetString(g_sApiUrl, sizeof(g_sApiUrl));
-
 	AutoExecConfig(true, "sqlmatches");
 
-	// Create HTTP Client
-	g_Client = new HTTPClient(g_sApiUrl);
-	g_Client.SetHeader("Content-Type:", "application/json");
-	g_Client.FollowLocation = true;
-	g_Client.ConnectTimeout = 300;
-	g_Client.Timeout = 300;
+	LoadCvarHttp();
 
 	// Register commands
 	RegConsoleCmd("sm_creatematch", Command_CreateMatch, "Creates a match");
 	RegConsoleCmd("sm_endmatch", Command_EndMatch, "Ends a match");
 }
 
-public void Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
-{
+public void Event_RoundStart(Event event, const char[] name, bool dontBroadcast) {
 	if(InWarmup()) return;
 
 	CreateMatch();
 }
 
-public void OnAPIChanged(ConVar convar, const char[] oldValue, const char[] newValue)
-{
-	g_cvApiUrl.GetString(g_sApiUrl, sizeof(g_sApiUrl));
-	g_cvApiKey.GetString(g_sApiKey, sizeof(g_sApiKey));
-
-	// Remove trailing backslash from '/api/'
-	int len = strlen(g_sApiUrl);
-	if(len > 0 && g_sApiUrl[len - 1] == '/')
-		g_sApiUrl[len - 1] = '\0';
-
-	// Log error about /api/
-	if(len > 0 && StrContains(g_sApiUrl[len - 4], "/api") == -1)
-		LogMessage("The API route normally ends with '/api'");
-
-	// Recreate HTTP client with new url
-	delete g_Client;
-	g_Client = new HTTPClient(g_sApiUrl);
-	g_Client.SetHeader("Content-Type:", "application/json");
-	g_Client.FollowLocation = true;
-	g_Client.ConnectTimeout = 300;
-	g_Client.Timeout = 300;
+public void OnAPIChanged(ConVar convar, const char[] oldValue, const char[] newValue) {
+	LoadCvarHttp();
 }
 
-public void OnConfigsExecuted()
-{
-	g_cvApiKey.GetString(g_sApiKey, sizeof(g_sApiKey));
-	g_cvApiUrl.GetString(g_sApiUrl, sizeof(g_sApiUrl));
-
-	// Remove trailing backslash from '/api/'
-	int len = strlen(g_sApiUrl);
-	if(len > 0 && g_sApiUrl[len - 1] == '/')
-		g_sApiUrl[len - 1] = '\0';
-
-	// Log error about /api/
-	if(len > 0 && StrContains(g_sApiUrl[len - 4], "/api") == -1)
-		LogMessage("The API route normally ends with '/api'");
-
-	// Recreate HTTP Client with new url
-	delete g_Client;
-	g_Client = new HTTPClient(g_sApiUrl);
-	g_Client.SetHeader("Content-Type:", "application/json");
-	g_Client.FollowLocation = true;
-	g_Client.ConnectTimeout = 300;
-	g_Client.Timeout = 300;
+public void OnConfigsExecuted() {
+	LoadCvarHttp();
 }
 
-public void OnClientPutInServer(int Client)
-{
+public void OnClientPutInServer(int Client) {
 	ResetVars(Client);
 	g_PlayerStats[Client].Index = Client;
 }
 
-void ResetVars(int Client)
-{
+void ResetVars(int Client) {
 	g_PlayerStats[Client].Index = 0;
 	g_PlayerStats[Client].Username = "";
 	g_PlayerStats[Client].SteamID = "";
@@ -183,28 +150,23 @@ void ResetVars(int Client)
 	g_PlayerStats[Client].Disconnected = false;
 }
 
-public Action Command_CreateMatch(int client, int args)
-{
+public Action Command_CreateMatch(int client, int args) {
 	CreateMatch();
 }
 
-public Action Command_EndMatch(int client, int args)
-{
+public Action Command_EndMatch(int client, int args) {
 	EndMatch();
 }
 
-void CreateMatch()
-{
+void CreateMatch() {
 	if(InMatch()) return;
 
-	if(strlen(g_sApiUrl) == 0)
-	{
+	if(strlen(g_sApiUrl) == 0) {
 		LogError("Failed to create match. Error: ConVar sm_sqlmatches_url cannot be empty.");
 		return;
 	}
 
-	if(strlen(g_sApiKey) == 0)
-	{
+	if(strlen(g_sApiKey) == 0) {
 		LogError("Failed to create match. Error: ConVar sm_sqlmatches_key cannot be empty.");
 		return;
 	}
@@ -253,8 +215,7 @@ void CreateMatch()
 	delete json;
 }
 
-void HTTP_OnCreateMatch(HTTPResponse response, any value, const char[] error)
-{
+void HTTP_OnCreateMatch(HTTPResponse response, any value, const char[] error) {
 	if(strlen(error) > 0)
 	{
 		LogError("HTTP_OnCreateMatch - Error string - Failed! Error: %s", error);
@@ -286,8 +247,7 @@ void HTTP_OnCreateMatch(HTTPResponse response, any value, const char[] error)
 	ServerCommand("tv_record \"%s\"", g_sMatchId);
 }
 
-void EndMatch()
-{
+void EndMatch() {
 	if(!InMatch()) return;
 
 	if(strlen(g_sApiUrl) == 0)
@@ -310,8 +270,7 @@ void EndMatch()
 	g_Client.Delete(sUrl, HTTP_OnEndMatch);
 }
 
-void HTTP_OnEndMatch(HTTPResponse response, any value, const char[] error)
-{
+void HTTP_OnEndMatch(HTTPResponse response, any value, const char[] error) {
 	if(strlen(error) > 0)
 	{
 		LogError("HTTP_OnEndMatch - Error string - Failed! Error: %s", error);
@@ -339,8 +298,7 @@ void HTTP_OnEndMatch(HTTPResponse response, any value, const char[] error)
 	g_sMatchId = "";
 }
 
-void UpdateMatch(int team_1_score = -1, int team_2_score = -1, const MatchUpdatePlayer[] players, int size = -1, bool dontUpdate = false, int team_1_side = -1, int team_2_side = -1, bool end = false)
-{
+void UpdateMatch(int team_1_score = -1, int team_2_score = -1, const MatchUpdatePlayer[] players, int size = -1, bool dontUpdate = false, int team_1_side = -1, int team_2_side = -1, bool end = false) {
 	if(!InMatch() && end == false) return;
 
 	if(strlen(g_sApiUrl) == 0)
@@ -391,8 +349,7 @@ void UpdateMatch(int team_1_score = -1, int team_2_score = -1, const MatchUpdate
 	delete json;
 }
 
-void HTTP_OnUpdateMatch(HTTPResponse response, any value, const char[] error)
-{
+void HTTP_OnUpdateMatch(HTTPResponse response, any value, const char[] error) {
 	if(strlen(error) > 0)
 	{
 		LogError("HTTP_OnUpdateMatch - Error string - Failed! Error: %s", error);
@@ -415,8 +372,7 @@ void HTTP_OnUpdateMatch(HTTPResponse response, any value, const char[] error)
 	PrintToServer("%s Match updated successfully.", PREFIX);
 }
 
-void UploadDemo(const char[] demoName)
-{
+void UploadDemo(const char[] demoName) {
 	if(strlen(g_sApiUrl) == 0)
 	{
 		LogError("Failed to upload demo. Error: ConVar sm_sqlmatches_url cannot be empty.");
@@ -453,8 +409,7 @@ void UploadDemo(const char[] demoName)
 	PrintToServer("%s Uploading demo...", PREFIX);
 }
 
-void HTTP_OnUploadDemo(HTTPStatus status, DataPack pack, const char[] error)
-{
+void HTTP_OnUploadDemo(HTTPStatus status, DataPack pack, const char[] error) {
 	if(strlen(error) > 0 || status != HTTPStatus_OK)
 	{
 		LogError("HTTP_OnUploadDemo Failed! Error: %s", error);
@@ -464,14 +419,12 @@ void HTTP_OnUploadDemo(HTTPStatus status, DataPack pack, const char[] error)
 	PrintToServer("%s Demo uploaded successfully.", PREFIX);
 }
 
-public void Event_RoundEnd(Event event, const char[] name, bool dontBroadcast)
-{
+public void Event_RoundEnd(Event event, const char[] name, bool dontBroadcast) {
 	UpdatePlayerStats(g_PlayerStats, sizeof(g_PlayerStats));
 	UpdateMatch(.players = g_PlayerStats, .size = sizeof(g_PlayerStats));
 }
 
-public void Event_WeaponFired(Event event, const char[] name, bool dontBroadcast)
-{
+public void Event_WeaponFired(Event event, const char[] name, bool dontBroadcast) {
 	int Client = GetClientOfUserId(event.GetInt("userid"));
 	if(!InMatch() || !IsValidClient(Client)) return;
 
@@ -481,8 +434,7 @@ public void Event_WeaponFired(Event event, const char[] name, bool dontBroadcast
 	if(GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType") != -1 && GetEntProp(iWeapon, Prop_Send, "m_iClip1") != 255) g_PlayerStats[Client].ShotsFired++; //should filter knife and grenades
 }
 
-public void Event_PlayerHurt(Event event, const char[] name, bool dontBroadcast)
-{
+public void Event_PlayerHurt(Event event, const char[] name, bool dontBroadcast) {
 	int Client = GetClientOfUserId(event.GetInt("attacker"));
 	if(!InMatch() || !IsValidClient(Client)) return;
 
@@ -494,8 +446,7 @@ public void Event_PlayerHurt(Event event, const char[] name, bool dontBroadcast)
 }
 
 /* This has changed  */
-public void Event_HalfTime(Event event, const char[] name, bool dontBroadcast)
-{
+public void Event_HalfTime(Event event, const char[] name, bool dontBroadcast) {
 	if(!InMatch()) return;
 
 	if (!g_bAlreadySwapped)
@@ -510,8 +461,7 @@ public void Event_HalfTime(Event event, const char[] name, bool dontBroadcast)
 		LogError("Event_HalfTime(): Teams have already been swapped!");
 }
 
-public Action Event_PlayerDisconnect(Event event, const char[] name, bool dontBroadcast)
-{
+public Action Event_PlayerDisconnect(Event event, const char[] name, bool dontBroadcast) {
 	if(!InMatch()) return Plugin_Continue;
 
 	// If the client isn't valid or isn't currently in a match return
@@ -533,8 +483,7 @@ public Action Event_PlayerDisconnect(Event event, const char[] name, bool dontBr
 	return Plugin_Continue;
 }
 
-public Action Event_MatchEnd(Event event, const char[] name, bool dontBroadcast)
-{
+public Action Event_MatchEnd(Event event, const char[] name, bool dontBroadcast) {
 	if(!InMatch()) return;
 
 	UpdateMatch(.players = g_PlayerStats, .size = sizeof(g_PlayerStats), .end = true);
@@ -543,23 +492,19 @@ public Action Event_MatchEnd(Event event, const char[] name, bool dontBroadcast)
 	g_sMatchId = "";
 }
 
-stock void RestartGame(int delay)
-{
+stock void RestartGame(int delay) {
 	ServerCommand("mp_restartgame %d", delay);
 }
 
-stock bool InWarmup()
-{
+stock bool InWarmup() {
   return GameRules_GetProp("m_bWarmupPeriod") != 0;
 }
 
-stock bool InMatch()
-{
+stock bool InMatch() {
 	return !StrEqual(g_sMatchId, "") && !InWarmup();
 }
 
-stock void UpdatePlayerStats(MatchUpdatePlayer[] players, int size)
-{
+stock void UpdatePlayerStats(MatchUpdatePlayer[] players, int size) {
 	int ent = FindEntityByClassname(-1, "cs_player_manager");
 
 	// Iterate over players array and update values for every client
@@ -587,8 +532,7 @@ stock void UpdatePlayerStats(MatchUpdatePlayer[] players, int size)
 	}
 }
 
-stock JSONArray GetPlayersJson(const MatchUpdatePlayer[] players, int size)
-{
+stock JSONArray GetPlayersJson(const MatchUpdatePlayer[] players, int size) {
 	JSONArray json = new JSONArray();
 
 	for(int i = 0; i < size; i++)
@@ -618,8 +562,7 @@ stock JSONArray GetPlayersJson(const MatchUpdatePlayer[] players, int size)
 	return json;
 }
 
-stock bool IsValidClient(int client)
-{
+stock bool IsValidClient(int client) {
 	if (client >= 1 &&
 	client <= MaxClients &&
 	IsClientConnected(client) &&
