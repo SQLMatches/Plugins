@@ -19,11 +19,11 @@ jobs:
         run: |
           VERSION=$(git rev-list --count HEAD)
           SHORT=$(git describe --always --long --dirty)
-          SOURCEMOD_PATH=$GITHUB_WORKSPACE
+          SOURCEMOD_PATH=$GITHUB_WORKSPACE/addons/sourcemod
           echo ::set-env name=PLUGIN_VERSION::${{ matrix.SM_VERSION }}.$VERSION-$SHORT
           echo ::set-env name=SOURCEMOD_PATH::$SOURCEMOD_PATH
-          echo ::set-env name=SCRIPTS_PATH::$SOURCEMOD_PATH/
-          echo ::set-env name=PLUGINS_PATH::$SOURCEMOD_PATH/compiled/
+          echo ::set-env name=SCRIPTS_PATH::$SOURCEMOD_PATH/scripting/
+          echo ::set-env name=PLUGINS_PATH::$SOURCEMOD_PATH/scripting/compiled/
 
       - name: Setup SourcePawn Compiler ${{matrix.SM_VERSION}}
         uses: rumblefrog/setup-sp@v1.0.0
@@ -44,7 +44,7 @@ jobs:
           mkdir -p Build/
           rsync -av --include='*/' --include="*.smx" --exclude="*" --remove-source-files $SCRIPTS_PATH/ Build/
       
-      - name: Test Upload plugin files
+      - name: Upload plugin files
         uses: actions/upload-artifact@master
         with: 
           name: Compiled plugins
