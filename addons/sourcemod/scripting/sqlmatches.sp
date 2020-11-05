@@ -2,6 +2,7 @@
 #include <sdktools>
 #include <cstrike>
 #include <ripext>
+#include <base64>
 
 #pragma semicolon 1
 #pragma newdecls required
@@ -15,7 +16,6 @@ bool g_bGet5Available;
 bool g_bAlreadySwapped;
 
 char g_sApiUrl[512];
-char g_sApiKey[64];
 char g_sMatchId[32];
 
 ConVar g_cvApiUrl;
@@ -68,12 +68,22 @@ public void OnLibraryRemoved(const char[] name) {
 }
 
 void LoadCvarHttp() {
-	g_cvApiKey.GetString(g_sApiKey, sizeof(g_sApiKey));
+	char sApiKey[28];
+	char sBase64ApiKey[100];
+	char sBasicAuth[106];
+
+	g_cvApiKey.GetString(sApiKey, sizeof(sApiKey));
 	g_cvApiUrl.GetString(g_sApiUrl, sizeof(g_sApiUrl));
+
+	EncodeBase64(sBase64ApiKey, sizeof(sBase64ApiKey), sApiKey);
+	Format(sBasicAuth, sizeof(sBasicAuth), "Basic %s", sBase64ApiKey);
 
 	// Create HTTP Client
 	g_Client = new HTTPClient(g_sApiUrl);
+
 	g_Client.SetHeader("Content-Type:", "application/json");
+	g_Client.SetHeader("Authorization", sBasicAuth);
+
 	g_Client.FollowLocation = true;
 	g_Client.ConnectTimeout = 300;
 	g_Client.Timeout = 300;
@@ -156,14 +166,9 @@ void CreateMatch() {
 		return;
 	}
 
-	if(strlen(g_sApiKey) == 0) {
-		LogError("Failed to create match. Error: ConVar sm_sqlmatches_key cannot be empty.");
-		return;
-	}
-
 	// Format request
 	char sUrl[1024];
-	Format(sUrl, sizeof(sUrl), "match/create/?api_key=%s", g_sApiKey);
+	Format(sUrl, sizeof(sUrl), "match/create/");
 
 	// Setup JSON data
 	char sTeamNameCT[64];
@@ -240,14 +245,9 @@ void EndMatch() {
 		return;
 	}
 
-	if(strlen(g_sApiKey) == 0) {
-		LogError("Failed to end match. Error: ConVar sm_sqlmatches_key cannot be empty.");
-		return;
-	}
-
 	// Format request
 	char sUrl[1024];
-	Format(sUrl, sizeof(sUrl), "match/%s?api_key=%s", g_sMatchId, g_sApiKey);
+	Format(sUrl, sizeof(sUrl), "match/%s/", g_sMatchId);
 
 	// Send request
 	g_Client.Delete(sUrl, HTTP_OnEndMatch);
@@ -290,11 +290,6 @@ void UpdateMatch(int team_1_score = -1, int team_2_score = -1, const MatchUpdate
 		return;
 	}
 
-	if(strlen(g_sApiKey) == 0) {
-		LogError("Failed to update match. Error: ConVar sm_sqlmatches_key cannot be empty.");
-		return;
-	}
-
 	// Set scores if not passed in manually
 	if(team_1_score == -1) {
 		team_1_score = CS_GetTeamScore(CS_TEAM_CT);
@@ -329,7 +324,7 @@ void UpdateMatch(int team_1_score = -1, int team_2_score = -1, const MatchUpdate
 
 	// Format request
 	char sUrl[1024];
-	Format(sUrl, sizeof(sUrl), "match/%s/?api_key=%s", g_sMatchId, g_sApiKey);
+	Format(sUrl, sizeof(sUrl), "match/%s/", g_sMatchId);
 
 	// Send request
 	g_Client.Post(sUrl, json, HTTP_OnUpdateMatch);
@@ -363,11 +358,6 @@ void UploadDemo(const char[] demoName) {
 		return;
 	}
 
-	if(strlen(g_sApiKey) == 0) {
-		LogError("Failed to upload demo. Error: ConVar sm_sqlmatches_key cannot be empty.");
-		return;
-	}
-
 	char formattedDemo[128];
 	Format(formattedDemo, sizeof(formattedDemo), "%s.dem", demoName);
 	if(!FileExists(formattedDemo)) {
@@ -382,7 +372,7 @@ void UploadDemo(const char[] demoName) {
 
 	// Format request
 	char sUrl[1024];
-	Format(sUrl, sizeof(sUrl), "match/%s/upload/?api_key=%s", g_sMatchId, g_sApiKey);
+	Format(sUrl, sizeof(sUrl), "match/%s/upload/", g_sMatchId);
 
 	// Send request
 	g_Client.UploadFile(sUrl, formattedDemo, HTTP_OnUploadDemo);
