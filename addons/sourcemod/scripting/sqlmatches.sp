@@ -462,10 +462,6 @@ public Action Event_MatchEnd(Event event, const char[] name, bool dontBroadcast)
 	g_sMatchId = "";
 }
 
-stock void RestartGame(int delay) {
-	ServerCommand("mp_restartgame %d", delay);
-}
-
 stock bool InWarmup() {
   return GameRules_GetProp("m_bWarmupPeriod") != 0;
 }
@@ -482,11 +478,11 @@ stock void UpdatePlayerStats(MatchUpdatePlayer[] players, int size) {
 		int Client = players[i].Index;
 		if(!IsValidClient(Client)) continue;
 
-		// dumb teams :(
-		if(GetClientTeam(Client) == CS_TEAM_CT)
+		if(GetClientTeam(Client) == CS_TEAM_CT) {
 			players[Client].Team = 0;
-		else if(GetClientTeam(Client) == CS_TEAM_T)
+		} else if(GetClientTeam(Client) == CS_TEAM_T) {
 			players[Client].Team = 1;
+		}
 
 		players[Client].Alive = view_as<bool>(GetEntProp(ent, Prop_Send, "m_bAlive", _, Client));
 		players[Client].Ping = GetEntProp(ent, Prop_Send, "m_iPing", _, Client);
