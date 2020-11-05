@@ -15,7 +15,6 @@ bool g_bPugSetupAvailable;
 bool g_bGet5Available;
 bool g_bAlreadySwapped;
 
-char g_sApiUrl[512];
 char g_sMatchId[32];
 
 ConVar g_cvApiUrl;
@@ -71,15 +70,24 @@ void LoadCvarHttp() {
 	char sApiKey[28];
 	char sBase64ApiKey[100];
 	char sBasicAuth[106];
+	char sApiUrl[512];
 
 	g_cvApiKey.GetString(sApiKey, sizeof(sApiKey));
-	g_cvApiUrl.GetString(g_sApiUrl, sizeof(g_sApiUrl));
+	g_cvApiUrl.GetString(sApiUrl, sizeof(sApiUrl));
+
+	if(strlen(sApiUrl) == 0) {
+		LogError("Error: ConVar sm_sqlmatches_url shouldn't be empty.");
+	}
+
+	if(strlen(sApiKey) == 0) {
+		LogError("Error: ConVar sm_sqlmatches_key shouldn't be empty.");
+	}
 
 	EncodeBase64(sBase64ApiKey, sizeof(sBase64ApiKey), sApiKey);
 	Format(sBasicAuth, sizeof(sBasicAuth), "Basic %s", sBase64ApiKey);
 
 	// Create HTTP Client
-	g_Client = new HTTPClient(g_sApiUrl);
+	g_Client = new HTTPClient(sApiUrl);
 
 	g_Client.SetHeader("Content-Type:", "application/json");
 	g_Client.SetHeader("Authorization", sBasicAuth);
@@ -161,11 +169,6 @@ void ResetVars(int Client) {
 void CreateMatch() {
 	if(InMatch()) return;
 
-	if(strlen(g_sApiUrl) == 0) {
-		LogError("Failed to create match. Error: ConVar sm_sqlmatches_url cannot be empty.");
-		return;
-	}
-
 	// Format request
 	char sUrl[1024];
 	Format(sUrl, sizeof(sUrl), "match/create/");
@@ -240,11 +243,6 @@ void HTTP_OnCreateMatch(HTTPResponse response, any value, const char[] error) {
 void EndMatch() {
 	if(!InMatch()) return;
 
-	if(strlen(g_sApiUrl) == 0) {
-		LogError("Failed to end match. Error: ConVar sm_sqlmatches_url cannot be empty.");
-		return;
-	}
-
 	// Format request
 	char sUrl[1024];
 	Format(sUrl, sizeof(sUrl), "match/%s/", g_sMatchId);
@@ -284,11 +282,6 @@ void HTTP_OnEndMatch(HTTPResponse response, any value, const char[] error) {
 
 void UpdateMatch(int team_1_score = -1, int team_2_score = -1, const MatchUpdatePlayer[] players, int size = -1, bool dontUpdate = false, int team_1_side = -1, int team_2_side = -1, bool end = false) {
 	if(!InMatch() && end == false) return;
-
-	if(strlen(g_sApiUrl) == 0) {
-		LogError("Failed to update match. Error: ConVar sm_sqlmatches_url cannot be empty.");
-		return;
-	}
 
 	// Set scores if not passed in manually
 	if(team_1_score == -1) {
@@ -353,11 +346,6 @@ void HTTP_OnUpdateMatch(HTTPResponse response, any value, const char[] error) {
 }
 
 void UploadDemo(const char[] demoName) {
-	if(strlen(g_sApiUrl) == 0) {
-		LogError("Failed to upload demo. Error: ConVar sm_sqlmatches_url cannot be empty.");
-		return;
-	}
-
 	char formattedDemo[128];
 	Format(formattedDemo, sizeof(formattedDemo), "%s.dem", demoName);
 	if(!FileExists(formattedDemo)) {
