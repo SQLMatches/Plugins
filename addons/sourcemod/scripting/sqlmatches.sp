@@ -72,8 +72,8 @@ void LoadCvarHttp() {
 
 	// Remove trailing backslash from '/api/'
 	int len = strlen(g_sApiUrl);
-	if(len > 0 && g_sApiUrl[len - 1] == '/')
-		g_sApiUrl[len - 1] = '\0';
+	if(len > 0 && g_sApiUrl[len - 1] == "/")
+		g_sApiUrl[len - 1] = "\0";
 
 	// Log error about /api/
 	if(len > 0 && StrContains(g_sApiUrl[len - 4], "/api") == -1)
@@ -115,7 +115,6 @@ public void OnPluginStart() {
 
 public void Event_RoundStart(Event event, const char[] name, bool dontBroadcast) {
 	if(InWarmup()) return;
-
 	CreateMatch();
 }
 
@@ -182,13 +181,10 @@ void CreateMatch() {
 	JSONObject json = new JSONObject();
 
 	// Set names if pugsetup or get5 are available
-	if(g_bGet5Available || g_bPugSetupAvailable)
-	{
+	if(g_bGet5Available || g_bPugSetupAvailable) {
 		FindConVar("mp_teamname_1").GetString(sTeamNameCT, sizeof(sTeamNameCT));
 		FindConVar("mp_teamname_2").GetString(sTeamNameT, sizeof(sTeamNameT));
-	}
-	else // Otherwise just use garbage values
-	{
+	} else {
 		sTeamNameCT = "1";
 		sTeamNameT = "2";
 	}
