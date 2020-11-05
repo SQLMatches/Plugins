@@ -71,17 +71,6 @@ void LoadCvarHttp() {
 	g_cvApiKey.GetString(g_sApiKey, sizeof(g_sApiKey));
 	g_cvApiUrl.GetString(g_sApiUrl, sizeof(g_sApiUrl));
 
-	// Remove trailing backslash from '/api/'
-	int len = strlen(g_sApiUrl);
-	if(len > 0 && g_sApiUrl[len - 1] == "/") {
-		g_sApiUrl[len - 1] = "\0";
-	}
-
-	// Log error about /api/
-	if(len > 0 && StrContains(g_sApiUrl[len - 4], "/api") == -1) {
-		LogMessage("The API route normally ends with '/api'");
-	}
-
 	// Create HTTP Client
 	g_Client = new HTTPClient(g_sApiUrl);
 	g_Client.SetHeader("Content-Type:", "application/json");
@@ -127,8 +116,9 @@ public void OnMapStart() {
 }
 
 public void Event_RoundStart(Event event, const char[] name, bool dontBroadcast) {
-	if(InWarmup()) return;
-	CreateMatch();
+	if(!InWarmup()) {
+		CreateMatch();
+	}
 }
 
 public void OnAPIChanged(ConVar convar, const char[] oldValue, const char[] newValue) {
