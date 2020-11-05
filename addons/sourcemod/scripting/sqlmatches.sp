@@ -100,10 +100,6 @@ public void OnPluginStart() {
 	AutoExecConfig(true, "sqlmatches");
 
 	LoadCvarHttp();
-
-	// Register commands
-	RegConsoleCmd("sm_creatematch", Command_CreateMatch, "Creates a match");
-	RegConsoleCmd("sm_endmatch", Command_EndMatch, "Ends a match");
 }
 
 public void OnMapStart() {
@@ -150,14 +146,6 @@ void ResetVars(int Client) {
 	g_PlayerStats[Client].MVPs = 0;
 	g_PlayerStats[Client].Score = 0;
 	g_PlayerStats[Client].Disconnected = false;
-}
-
-public Action Command_CreateMatch(int client, int args) {
-	CreateMatch();
-}
-
-public Action Command_EndMatch(int client, int args) {
-	EndMatch();
 }
 
 void CreateMatch() {
