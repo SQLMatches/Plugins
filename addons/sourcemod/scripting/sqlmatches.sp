@@ -156,8 +156,10 @@ void HTTP_OnMapLoad(HTTPResponse response, any value, const char[] error) {
 		return;
 	}
 
+	JSONObject data = view_as<JSONObject>(responseData.Get("data"));
+
 	char sVersionMessage[64];
-	responseData.GetString("message", sVersionMessage, sizeof(sVersionMessage));
+	data.GetString("message", sVersionMessage, sizeof(sVersionMessage));
 
 	PrintToChatAll("%s %s", PREFIX, sVersionMessage);
 }
