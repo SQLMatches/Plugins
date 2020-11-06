@@ -110,7 +110,7 @@ public void OnPluginStart() {
 
 	// Register ConVars
 	g_cvApiKey = CreateConVar("sm_sqlmatches_key", "", "API key for sqlmatches API", FCVAR_PROTECTED);
-	g_cvApiUrl = CreateConVar("sm_sqlmatches_url", "https://sqlmatches.com/api", "URL of sqlmatches base API route", FCVAR_PROTECTED);
+	g_cvApiUrl = CreateConVar("sm_sqlmatches_url", "https://api.sqlmatches.com/", "URL of sqlmatches base API route", FCVAR_PROTECTED);
 	g_cvEnableAutoConfig = CreateConVar("sm_sqlmatches_autoconfig", "1", "Used to auto config.", FCVAR_PROTECTED);
 	g_cvEnableAnnounce = CreateConVar("sm_sqlmatches_announce", "1", "Show version announce", FCVAR_PROTECTED);
 
