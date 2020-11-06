@@ -20,6 +20,7 @@ char g_sMatchId[32];
 ConVar g_cvApiUrl;
 ConVar g_cvApiKey;
 ConVar g_cvEnableAutoConfig;
+ConVar g_cvEnableAnnounce;
 
 HTTPClient g_Client;
 
@@ -111,6 +112,7 @@ public void OnPluginStart() {
 	g_cvApiKey = CreateConVar("sm_sqlmatches_key", "", "API key for sqlmatches API", FCVAR_PROTECTED);
 	g_cvApiUrl = CreateConVar("sm_sqlmatches_url", "https://sqlmatches.com/api", "URL of sqlmatches base API route", FCVAR_PROTECTED);
 	g_cvEnableAutoConfig = CreateConVar("sm_sqlmatches_autoconfig", "1", "Used to auto config.", FCVAR_PROTECTED);
+	g_cvEnableAnnounce = CreateConVar("sm_sqlmatches_announce", "1", "Show version announce", FCVAR_PROTECTED);
 
 	g_cvApiUrl.AddChangeHook(OnAPIChanged);
 	g_cvApiKey.AddChangeHook(OnAPIChanged);
@@ -121,12 +123,42 @@ public void OnPluginStart() {
 }
 
 public void OnMapStart() {
-	if (g_cvEnableAutoConfig.BoolValue == 1) {
+	if(g_cvEnableAutoConfig.BoolValue == 1) {
 		ServerCommand("tv_enable 1");
 		ServerCommand("tv_autorecord 0");
 		ServerCommand("sv_hibernate_when_empty 0");
 		ServerCommand("mp_endmatch_votenextmap 20");
 	}
+
+	if(g_cvEnableAnnounce.BoolValue == 1) {
+		char sUrl[1024];
+		Format(sUrl, sizeof(sUrl), "version/%s", PlInfo_Version);
+
+		g_Client.Get(sUrl, HTTP_OnMapLoad);
+	}
+}
+
+void HTTP_OnMapLoad(HTTPResponse response, any value, const char[] error) {
+	if(strlen(error) > 0) {
+		LogError("HTTP_OnMapLoad - Error string - Failed! Error: %s", error);
+		return;
+	}
+
+	// Log errors if any occurred
+	if(response.Status != HTTPStatus_OK) {
+		// Error string
+		char errorInfo[1024];
+		responseData.GetString("error", errorInfo, sizeof(errorInfo));
+		LogError("HTTP_OnMapLoad - Invalid status code - Failed! Error: %s", errorInfo);
+		return;
+	}
+
+	JSONObject jsonData = view_as<JSONObject>(response.Data);
+
+	char sVersionMessage[64];
+	jsonData.GetString("message", sVersionMessage, sizeof(sVersionMessage));
+
+	PrintToChatAll("%s %s", PREFIX, sVersionMessage);
 }
 
 public void Event_RoundStart(Event event, const char[] name, bool dontBroadcast) {
@@ -169,10 +201,6 @@ void ResetVars(int Client) {
 void CreateMatch() {
 	if(InMatch()) return;
 
-	// Format request
-	char sUrl[1024];
-	Format(sUrl, sizeof(sUrl), "match/create/");
-
 	// Setup JSON data
 	char sTeamNameCT[64];
 	char sTeamNameT[64];
@@ -204,7 +232,7 @@ void CreateMatch() {
 	json.SetString("map_name", sMap);
 
 	// Send request
-	g_Client.Post(sUrl, json, HTTP_OnCreateMatch);
+	g_Client.Post("match/create/", json, HTTP_OnCreateMatch);
 
 	// Delete handle
 	delete json;
