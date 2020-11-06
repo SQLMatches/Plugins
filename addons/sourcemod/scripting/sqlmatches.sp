@@ -50,7 +50,7 @@ public Plugin myinfo = {
 	description = "Match stats and demo recording system for CS:GO",
 	version = "1.1.0",
 	url = "https://sqlmatches.com/"
-};
+}
 
 public void OnAllPluginsLoaded() {
 	g_bPugSetupAvailable = LibraryExists("pugsetup");
