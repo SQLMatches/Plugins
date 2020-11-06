@@ -144,6 +144,9 @@ void HTTP_OnMapLoad(HTTPResponse response, any value, const char[] error) {
 		return;
 	}
 
+	// Get response data
+	JSONObject responseData = view_as<JSONObject>(response.Data);
+
 	// Log errors if any occurred
 	if(response.Status != HTTPStatus_OK) {
 		// Error string
@@ -153,10 +156,8 @@ void HTTP_OnMapLoad(HTTPResponse response, any value, const char[] error) {
 		return;
 	}
 
-	JSONObject jsonData = view_as<JSONObject>(response.Data);
-
 	char sVersionMessage[64];
-	jsonData.GetString("message", sVersionMessage, sizeof(sVersionMessage));
+	responseData.GetString("message", sVersionMessage, sizeof(sVersionMessage));
 
 	PrintToChatAll("%s %s", PREFIX, sVersionMessage);
 }
