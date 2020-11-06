@@ -132,7 +132,7 @@ public void OnMapStart() {
 
 	if(g_cvEnableAnnounce.BoolValue == 1) {
 		char sUrl[1024];
-		Format(sUrl, sizeof(sUrl), "version/%s", PlInfo_Version);
+		Format(sUrl, sizeof(sUrl), "version/%s/", PlInfo_Version);
 
 		g_Client.Get(sUrl, HTTP_OnMapLoad);
 	}
