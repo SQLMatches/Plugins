@@ -511,8 +511,6 @@ stock void UpdatePlayerStats(MatchUpdatePlayer[] players, int size) {
 		players[Client].MVPs = GetEntProp(ent, Prop_Send, "m_iMVPs", _, Client);
 		players[Client].Score = GetEntProp(ent, Prop_Send, "m_iScore", _, Client);
 
-		PrintToChatAll("Ping: %i, Kills: %i, Assists: %i, Deaths: %i", players[Client].Ping, players[Client].Kills, players[Client].Assists, players[Client].Deaths);
-
 		GetClientName(Client, players[Client].Username, sizeof(MatchUpdatePlayer::Username));
 		GetClientAuthId(Client, AuthId_SteamID64, players[Client].SteamID, sizeof(MatchUpdatePlayer::SteamID));
 	}
