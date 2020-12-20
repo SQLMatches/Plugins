@@ -109,7 +109,6 @@ void LoadCvarHttp() {
 public void OnPluginStart() {
 	//Hook Events
 	HookEvent("round_start", Event_RoundStart);
-	HookEvent("round_end", Event_RoundEnd);
 	HookEvent("weapon_fire", Event_WeaponFired);
 	HookEvent("player_hurt", Event_PlayerHurt);
 	HookEvent("announce_phase_end", Event_HalfTime);
@@ -208,8 +207,10 @@ void HTTP_OnEndMatch(HTTPResponse response, any value, const char[] error) {
 }
 
 public void Event_RoundStart(Event event, const char[] name, bool dontBroadcast) {
-	if(!InWarmup()) {
+	if(!InMatch()) {
 		CreateMatch();
+	} else {
+		UpdateMatch();
 	}
 }
 
@@ -314,7 +315,7 @@ void HTTP_OnCreateMatch(HTTPResponse response, any value, const char[] error) {
 	ServerCommand("tv_record \"%s\"", g_sMatchId);
 }
 
-void UpdateMatch(int team_1_score = -1, int team_2_score = -1, const MatchUpdatePlayer[] players, int size = -1, bool dontUpdate = false, int team_1_side = -1, int team_2_side = -1, bool end = false) {
+void UpdateMatch(int team_1_score = -1, int team_2_score = -1, bool dontUpdate = false, int team_1_side = -1, int team_2_side = -1, bool end = false) {
 	if(!InMatch() && end == false) return;
 
 	// Set scores if not passed in manually
@@ -333,7 +334,9 @@ void UpdateMatch(int team_1_score = -1, int team_2_score = -1, const MatchUpdate
 
 	// Format and set players data
 	if(!dontUpdate) {
-		JSONArray playersArray = GetPlayersJson(players, size);
+		UpdatePlayerStats(g_PlayerStats, sizeof(g_PlayerStats));
+
+		JSONArray playersArray = GetPlayersJson(g_PlayerStats, sizeof(g_PlayerStats));
 		json.Set("players", playersArray);
 		delete playersArray;
 	}
@@ -411,11 +414,6 @@ void HTTP_OnUploadDemo(HTTPStatus status, DataPack pack, const char[] error) {
 	PrintToChatAll("%s Demo uploaded successfully.", PREFIX);
 }
 
-public void Event_RoundEnd(Event event, const char[] name, bool dontBroadcast) {
-	UpdatePlayerStats(g_PlayerStats, sizeof(g_PlayerStats));
-	UpdateMatch(.players = g_PlayerStats, .size = sizeof(g_PlayerStats));
-}
-
 public void Event_WeaponFired(Event event, const char[] name, bool dontBroadcast) {
 	int Client = GetClientOfUserId(event.GetInt("userid"));
 	if(!InMatch() || !IsValidClient(Client)) return;
@@ -443,7 +441,7 @@ public void Event_HalfTime(Event event, const char[] name, bool dontBroadcast) {
 	if (!g_bAlreadySwapped) {
 		LogMessage("Event_HalfTime(): Starting team swap...");
 
-		UpdateMatch(.team_1_side = 1, .team_2_side = 0, .players = g_PlayerStats, .dontUpdate = false);
+		UpdateMatch(.team_1_side = 1, .team_2_side = 0, .dontUpdate = false);
 
 		g_bAlreadySwapped = true;
 	} else {
@@ -464,8 +462,7 @@ public Action Event_PlayerDisconnect(Event event, const char[] name, bool dontBr
 	if(sSteamID[7] != ':') return Plugin_Handled;
 	if(!GetClientAuthId(Client, AuthId_SteamID64, sSteamID, sizeof(sSteamID))) return Plugin_Handled;
 
-	UpdatePlayerStats(g_PlayerStats, sizeof(g_PlayerStats));
-	UpdateMatch(.players = g_PlayerStats, .size = sizeof(g_PlayerStats));
+	UpdateMatch();
 
 	// Reset client vars
 	ResetVars(Client);
@@ -476,7 +473,7 @@ public Action Event_PlayerDisconnect(Event event, const char[] name, bool dontBr
 public Action Event_MatchEnd(Event event, const char[] name, bool dontBroadcast) {
 	if(!InMatch()) return;
 
-	UpdateMatch(.players = g_PlayerStats, .size = sizeof(g_PlayerStats), .end = true);
+	UpdateMatch(.end = true);
 	if(FindConVar("tv_enable").IntValue == 1) {
 		UploadDemo(g_sMatchId);
 	}
@@ -513,6 +510,8 @@ stock void UpdatePlayerStats(MatchUpdatePlayer[] players, int size) {
 		players[Client].Deaths = GetEntProp(ent, Prop_Send, "m_iDeaths", _, Client);
 		players[Client].MVPs = GetEntProp(ent, Prop_Send, "m_iMVPs", _, Client);
 		players[Client].Score = GetEntProp(ent, Prop_Send, "m_iScore", _, Client);
+
+		PrintToChatAll("Ping: %i, Kills: %i, Assists: %i, Deaths: %i", players[Client].Ping, players[Client].Kills, players[Client].Assists, players[Client].Deaths);
 
 		GetClientName(Client, players[Client].Username, sizeof(MatchUpdatePlayer::Username));
 		GetClientAuthId(Client, AuthId_SteamID64, players[Client].SteamID, sizeof(MatchUpdatePlayer::SteamID));
