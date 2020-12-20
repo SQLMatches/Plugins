@@ -33,6 +33,8 @@ jobs:
           version: ${{ matrix.SM_VERSION}}
       
       - name: Compile SQLMatches
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         run: |
           for file in *.sp
           do
@@ -42,11 +44,15 @@ jobs:
         working-directory: ${{ env.SCRIPTS_PATH }}
 
       - name: Move compiled plugins
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         run: |
           mkdir -p Build/
           rsync -av --include='*/' --include="*.smx" --exclude="*" --remove-source-files $SCRIPTS_PATH/ Build/
       
       - name: Upload plugin files
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         uses: actions/upload-artifact@master
         with: 
           name: Compiled plugins
