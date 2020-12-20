@@ -3,6 +3,7 @@
 #include <cstrike>
 #include <ripext>
 #include <base64>
+#include <bzip2>
 
 #pragma semicolon 1
 #pragma newdecls required
@@ -22,11 +23,14 @@ bool g_bGet5Available;
 bool g_bAlreadySwapped;
 
 char g_sMatchId[38];
+// If a matchIdBefore is given we'll upload it during the match.
+char g_sMatchIdBefore[38];
 
 ConVar g_cvApiUrl;
 ConVar g_cvApiKey;
 ConVar g_cvEnableAutoConfig;
 ConVar g_cvEnableAnnounce;
+ConVar g_cvUploadType;
 
 HTTPClient g_Client;
 
@@ -64,13 +68,13 @@ public void OnAllPluginsLoaded() {
 }
 
 public void OnLibraryAdded(const char[] name) {
-	if(StrEqual(name, "pugsetup")) g_bPugSetupAvailable = true;
-	if(StrEqual(name, "get5")) g_bGet5Available = true;
+	if (StrEqual(name, "pugsetup")) g_bPugSetupAvailable = true;
+	if (StrEqual(name, "get5")) g_bGet5Available = true;
 }
 
 public void OnLibraryRemoved(const char[] name) {
-	if(StrEqual(name, "pugsetup")) g_bPugSetupAvailable = false;
-	if(StrEqual(name, "get5")) g_bGet5Available = false;
+	if (StrEqual(name, "pugsetup")) g_bPugSetupAvailable = false;
+	if (StrEqual(name, "get5")) g_bGet5Available = false;
 }
 
 void LoadCvarHttp() {
@@ -83,11 +87,11 @@ void LoadCvarHttp() {
 	g_cvApiKey.GetString(sApiKey, sizeof(sApiKey));
 	g_cvApiUrl.GetString(sApiUrl, sizeof(sApiUrl));
 
-	if(strlen(sApiUrl) == 0) {
+	if (strlen(sApiUrl) == 0) {
 		LogError("Error: ConVar sm_sqlmatches_url shouldn't be empty.");
 	}
 
-	if(strlen(sApiKey) == 0) {
+	if (strlen(sApiKey) == 0) {
 		LogError("Error: ConVar sm_sqlmatches_key shouldn't be empty.");
 	}
 
@@ -120,6 +124,7 @@ public void OnPluginStart() {
 	g_cvApiUrl = CreateConVar("sm_sqlmatches_url", "https://sqlmatches.com/api", "URL of sqlmatches base API route.", FCVAR_PROTECTED);
 	g_cvEnableAutoConfig = CreateConVar("sm_sqlmatches_autoconfig", "1", "Used to auto config.", FCVAR_PROTECTED);
 	g_cvEnableAnnounce = CreateConVar("sm_sqlmatches_announce", "1", "Show version announce", FCVAR_PROTECTED);
+	g_cvStartRoundUpload = CreateConVar("sm_sqlmatches_start_round_upload", "0", "0 = Upload demo at match end; 1 = Upload demo at start of next match.", FCVAR_PROTECTED);
 
 	g_cvApiUrl.AddChangeHook(OnAPIChanged);
 	g_cvApiKey.AddChangeHook(OnAPIChanged);
@@ -139,14 +144,18 @@ public void OnMapStart() {
 		g_Client.Delete(sUrl, HTTP_OnEndMatch);
 	}
 
-	if(g_cvEnableAutoConfig.BoolValue == 1) {
+	if (g_cvStartRoundUpload.BoolValue == 1 && !StrEqual(g_sMatchIdBefore, "")) {
+		UploadDemo(g_sMatchIdBefore);
+	}
+
+	if (g_cvEnableAutoConfig.BoolValue == 1) {
 		ServerCommand("tv_enable 1");
 		ServerCommand("tv_autorecord 0");
 		ServerCommand("sv_hibernate_when_empty 0");
 		ServerCommand("mp_endmatch_votenextmap 20");
 	}
 
-	if(g_cvEnableAnnounce.BoolValue == 1) {
+	if (g_cvEnableAnnounce.BoolValue == 1) {
 		char sUrl[1024];
 		Format(sUrl, sizeof(sUrl), "version/%s/", VERSION);
 
@@ -155,7 +164,7 @@ public void OnMapStart() {
 }
 
 void HTTP_OnMapLoad(HTTPResponse response, any value, const char[] error) {
-	if(strlen(error) > 0) {
+	if (strlen(error) > 0) {
 		LogError("HTTP_OnMapLoad - Error string - Failed! Error: %s", error);
 		return;
 	}
@@ -169,7 +178,7 @@ void HTTP_OnMapLoad(HTTPResponse response, any value, const char[] error) {
 	JSONObject responseData = view_as<JSONObject>(response.Data);
 
 	// Log errors if any occurred
-	if(response.Status != HTTPStatus_OK) {
+	if (response.Status != HTTPStatus_OK) {
 		// Error string
 		char errorInfo[1024];
 		responseData.GetString("error", errorInfo, sizeof(errorInfo));
@@ -186,7 +195,7 @@ void HTTP_OnMapLoad(HTTPResponse response, any value, const char[] error) {
 }
 
 void HTTP_OnEndMatch(HTTPResponse response, any value, const char[] error) {
-	if(strlen(error) > 0) {
+	if (strlen(error) > 0) {
 		LogError("HTTP_OnEndMatch - Error string - Failed! Error: %s", error);
 		return;
 	}
@@ -195,7 +204,7 @@ void HTTP_OnEndMatch(HTTPResponse response, any value, const char[] error) {
 	JSONObject responseData = view_as<JSONObject>(response.Data);
 
 	// Log errors if any occurred
-	if(response.Status != HTTPStatus_OK) {
+	if (response.Status != HTTPStatus_OK) {
 		// Error string
 		char errorInfo[1024];
 		responseData.GetString("error", errorInfo, sizeof(errorInfo));
@@ -207,7 +216,7 @@ void HTTP_OnEndMatch(HTTPResponse response, any value, const char[] error) {
 }
 
 public void Event_RoundStart(Event event, const char[] name, bool dontBroadcast) {
-	if(!InMatch()) {
+	if (!InMatch()) {
 		CreateMatch();
 	} else {
 		UpdateMatch();
@@ -246,7 +255,7 @@ void ResetVars(int Client) {
 }
 
 void CreateMatch() {
-	if(InMatch()) return;
+	if (InMatch()) return;
 
 	// Setup JSON data
 	char sTeamNameCT[64];
@@ -255,7 +264,7 @@ void CreateMatch() {
 	JSONObject json = new JSONObject();
 
 	// Set names if pugsetup or get5 are available
-	if(g_bGet5Available || g_bPugSetupAvailable) {
+	if (g_bGet5Available || g_bPugSetupAvailable) {
 		FindConVar("mp_teamname_1").GetString(sTeamNameCT, sizeof(sTeamNameCT));
 		FindConVar("mp_teamname_2").GetString(sTeamNameT, sizeof(sTeamNameT));
 	} else {
@@ -286,7 +295,7 @@ void CreateMatch() {
 }
 
 void HTTP_OnCreateMatch(HTTPResponse response, any value, const char[] error) {
-	if(strlen(error) > 0) {
+	if (strlen(error) > 0) {
 		LogError("HTTP_OnCreateMatch - Error string - Failed! Error: %s", error);
 		return;
 	}
@@ -300,7 +309,7 @@ void HTTP_OnCreateMatch(HTTPResponse response, any value, const char[] error) {
 	JSONObject responseData = view_as<JSONObject>(response.Data);
 
 	// Log errors if any occurred
-	if(response.Status != HTTPStatus_OK) {
+	if (response.Status != HTTPStatus_OK) {
 		char errorInfo[1024];
 		responseData.GetString("error", errorInfo, sizeof(errorInfo));
 		LogError("HTTP_OnCreateMatch - Invalid status code - Failed! Error: %s", errorInfo);
@@ -316,14 +325,14 @@ void HTTP_OnCreateMatch(HTTPResponse response, any value, const char[] error) {
 }
 
 void UpdateMatch(int team_1_score = -1, int team_2_score = -1, bool dontUpdate = false, int team_1_side = -1, int team_2_side = -1, bool end = false) {
-	if(!InMatch() && end == false) return;
+	if (!InMatch() && end == false) return;
 
 	// Set scores if not passed in manually
-	if(team_1_score == -1) {
+	if (team_1_score == -1) {
 		team_1_score = CS_GetTeamScore(CS_TEAM_CT);
 	}
 
-	if(team_2_score == -1) {
+	if (team_2_score == -1) {
 		team_2_score = CS_GetTeamScore(CS_TEAM_T);
 	}
 
@@ -331,9 +340,10 @@ void UpdateMatch(int team_1_score = -1, int team_2_score = -1, bool dontUpdate =
 	JSONObject json = new JSONObject();
 	json.SetInt("team_1_score", team_1_score);
 	json.SetInt("team_2_score", team_2_score);
+	json.SetBool("end", end);
 
 	// Format and set players data
-	if(!dontUpdate) {
+	if (!dontUpdate) {
 		UpdatePlayerStats(g_PlayerStats, sizeof(g_PlayerStats));
 
 		JSONArray playersArray = GetPlayersJson(g_PlayerStats, sizeof(g_PlayerStats));
@@ -342,14 +352,11 @@ void UpdateMatch(int team_1_score = -1, int team_2_score = -1, bool dontUpdate =
 	}
 
 	// Set optional data
-	if(team_1_side != -1) {
+	if (team_1_side != -1) {
 		json.SetInt("team_1_side", team_1_side);
 	}
-	if(team_2_side != -1) {
+	if (team_2_side != -1) {
 		json.SetInt("team_2_side", team_2_side);
-	}
-	if(end) {
-		json.SetBool("end", end);
 	}
 
 	// Format request
@@ -362,7 +369,7 @@ void UpdateMatch(int team_1_score = -1, int team_2_score = -1, bool dontUpdate =
 }
 
 void HTTP_OnUpdateMatch(HTTPResponse response, any value, const char[] error) {
-	if(strlen(error) > 0) {
+	if (strlen(error) > 0) {
 		LogError("HTTP_OnUpdateMatch - Error string - Failed! Error: %s", error);
 		return;
 	}
@@ -371,7 +378,7 @@ void HTTP_OnUpdateMatch(HTTPResponse response, any value, const char[] error) {
 	JSONObject responseData = view_as<JSONObject>(response.Data);
 
 	// Log errors if any occurred
-	if(response.Status != HTTPStatus_OK) {
+	if (response.Status != HTTPStatus_OK) {
 		// Error string
 		char errorInfo[1024];
 		responseData.GetString("error", errorInfo, sizeof(errorInfo));
@@ -382,31 +389,37 @@ void HTTP_OnUpdateMatch(HTTPResponse response, any value, const char[] error) {
 	PrintToServer("%s Match updated successfully.", PREFIX);
 }
 
-void UploadDemo(const char[] demoName) {
-	char formattedDemo[128];
-	Format(formattedDemo, sizeof(formattedDemo), "%s.dem", demoName);
-	if(!FileExists(formattedDemo)) {
+void UploadDemo(const char[] matchId) {
+	char formattedDemo[PLATFORM_MAX_PATH];
+	Format(formattedDemo, sizeof(formattedDemo), "%s.dem", matchId);
+	if (!FileExists(formattedDemo)) {
 		LogError("Failed to upload demo. Error: File \"%s\" does not exist.", formattedDemo);
 		return;
 	}
 
-	if(FileSize(formattedDemo) < 5000024) {
-		LogError("Demo file must be larger then 5 mb.");
-		return;
-	}
+	char formattedBzipDemo[PLATFORM_MAX_PATH];
+	Format(formattedBzipDemo, sizeof(formattedBzipDemo), "%s.bz2", formattedDemo)
+	BZ2_CompressFile(formattedDemo, formattedBzipDemo, 6);
 
 	// Format request
 	char sUrl[1024];
-	Format(sUrl, sizeof(sUrl), "match/%s/upload/", g_sMatchId);
+	Format(sUrl, sizeof(sUrl), "match/%s/upload/", matchId);
 
 	// Send request
-	g_Client.UploadFile(sUrl, formattedDemo, HTTP_OnUploadDemo);
+	g_Client.UploadFile(sUrl, formattedBzipDemo, HTTP_OnUploadDemo);
 
 	PrintToChatAll("%s Uploading demo...", PREFIX);
 }
 
+vold CompressedDemo(BZ_Error:iError, String:sIn[], String:sOut[], any:data) {
+	if (iError != BZ_OK) {
+		LogBZ2Error(iError);
+		return;
+	}
+}
+
 void HTTP_OnUploadDemo(HTTPStatus status, DataPack pack, const char[] error) {
-	if(strlen(error) > 0 || status != HTTPStatus_OK) {
+	if (strlen(error) > 0 || status != HTTPStatus_OK) {
 		LogError("HTTP_OnUploadDemo Failed! Error: %s", error);
 		return;
 	}
@@ -416,27 +429,26 @@ void HTTP_OnUploadDemo(HTTPStatus status, DataPack pack, const char[] error) {
 
 public void Event_WeaponFired(Event event, const char[] name, bool dontBroadcast) {
 	int Client = GetClientOfUserId(event.GetInt("userid"));
-	if(!InMatch() || !IsValidClient(Client)) return;
+	if (!InMatch() || !IsValidClient(Client)) return;
 
 	int iWeapon = GetEntPropEnt(Client, Prop_Send, "m_hActiveWeapon");
-	if(!IsValidEntity(iWeapon)) return;
+	if (!IsValidEntity(iWeapon)) return;
 
-	if(GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType") != -1 && GetEntProp(iWeapon, Prop_Send, "m_iClip1") != 255) g_PlayerStats[Client].ShotsFired++; //should filter knife and grenades
+	if (GetEntProp(iWeapon, Prop_Send, "m_iPrimaryAmmoType") != -1 && GetEntProp(iWeapon, Prop_Send, "m_iClip1") != 255) g_PlayerStats[Client].ShotsFired++; //should filter knife and grenades
 }
 
 public void Event_PlayerHurt(Event event, const char[] name, bool dontBroadcast) {
 	int Client = GetClientOfUserId(event.GetInt("attacker"));
-	if(!InMatch() || !IsValidClient(Client)) return;
+	if (!InMatch() || !IsValidClient(Client)) return;
 
-	if(event.GetInt("hitgroup") >= 0) {
+	if (event.GetInt("hitgroup") >= 0) {
 		g_PlayerStats[Client].ShotsHit++;
 		if(event.GetInt("hitgroup") == 1) g_PlayerStats[Client].Headshots++;
 	}
 }
 
-/* This has changed  */
 public void Event_HalfTime(Event event, const char[] name, bool dontBroadcast) {
-	if(!InMatch()) return;
+	if (!InMatch()) return;
 
 	if (!g_bAlreadySwapped) {
 		LogMessage("Event_HalfTime(): Starting team swap...");
@@ -450,17 +462,17 @@ public void Event_HalfTime(Event event, const char[] name, bool dontBroadcast) {
 }
 
 public Action Event_PlayerDisconnect(Event event, const char[] name, bool dontBroadcast) {
-	if(!InMatch()) return Plugin_Continue;
+	if (!InMatch()) return Plugin_Continue;
 
 	// If the client isn't valid or isn't currently in a match return
 	int Client = GetClientOfUserId(event.GetInt("userid"));
-	if(!IsValidClient(Client)) return Plugin_Handled;
+	if (!IsValidClient(Client)) return Plugin_Handled;
 
 	// If the client's steamid isn't valid return
 	char sSteamID[64];
 	event.GetString("networkid", sSteamID, sizeof(sSteamID));
-	if(sSteamID[7] != ':') return Plugin_Handled;
-	if(!GetClientAuthId(Client, AuthId_SteamID64, sSteamID, sizeof(sSteamID))) return Plugin_Handled;
+	if (sSteamID[7] != ':') return Plugin_Handled;
+	if (!GetClientAuthId(Client, AuthId_SteamID64, sSteamID, sizeof(sSteamID))) return Plugin_Handled;
 
 	UpdateMatch();
 
@@ -471,11 +483,15 @@ public Action Event_PlayerDisconnect(Event event, const char[] name, bool dontBr
 }
 
 public Action Event_MatchEnd(Event event, const char[] name, bool dontBroadcast) {
-	if(!InMatch()) return;
+	if (!InMatch()) return;
 
 	UpdateMatch(.end = true);
-	if(FindConVar("tv_enable").IntValue == 1) {
-		UploadDemo(g_sMatchId);
+	if (g_cvStartRoundUpload.BoolValue == 0) {
+		if(FindConVar("tv_enable").IntValue == 1) {
+			UploadDemo(g_sMatchId);
+		}
+	} else {
+		g_sMatchIdBefore = g_sMatchId;
 	}
 
 	g_sMatchId = "";
@@ -493,11 +509,11 @@ stock void UpdatePlayerStats(MatchUpdatePlayer[] players, int size) {
 	int ent = FindEntityByClassname(-1, "cs_player_manager");
 
 	// Iterate over players array and update values for every client
-	for(int i = 0; i < size; i++) {
+	for (int i = 0; i < size; i++) {
 		int Client = players[i].Index;
-		if(!IsValidClient(Client)) continue;
+		if (!IsValidClient(Client)) continue;
 
-		if(GetClientTeam(Client) == CS_TEAM_CT) {
+		if (GetClientTeam(Client) == CS_TEAM_CT) {
 			players[Client].Team = 0;
 		} else if(GetClientTeam(Client) == CS_TEAM_T) {
 			players[Client].Team = 1;
