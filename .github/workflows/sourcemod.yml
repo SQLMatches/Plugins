@@ -28,7 +28,7 @@ jobs:
           echo ::set-env name=PLUGINS_PATH::$SOURCEMOD_PATH/scripting/compiled/
 
       - name: Setup SourcePawn Compiler ${{matrix.SM_VERSION}}
-        uses: rumblefrog/setup-sp@v1.0.0
+        uses: rumblefrog/setup-sp@v1.0.1
         with:
           version: ${{ matrix.SM_VERSION}}
       
