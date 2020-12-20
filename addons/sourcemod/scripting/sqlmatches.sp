@@ -11,11 +11,17 @@
 #define TEAM_CT 	0
 #define TEAM_T 		1
 
+#define NAME 		"SQLMatches"
+#define AUTHORS		"The Doggy, ErikMinekus, WardPearce"
+#define DESC		"SQLMatches is a completely free & open source CS:GO match statistics & demo recording tool."
+#define VERSION 	"1.1.0"
+#define URL			"https://sqlmatches.com"
+
 bool g_bPugSetupAvailable;
 bool g_bGet5Available;
 bool g_bAlreadySwapped;
 
-char g_sMatchId[32];
+char g_sMatchId[38];
 
 ConVar g_cvApiUrl;
 ConVar g_cvApiKey;
@@ -45,11 +51,11 @@ enum struct MatchUpdatePlayer {
 MatchUpdatePlayer g_PlayerStats[MAXPLAYERS + 1];
 
 public Plugin myinfo = {
-	name = "SQLMatches",
-	author = "The Doggy, ErikMinekus, WardPearce",
-	description = "Match stats and demo recording system for CS:GO",
-	version = "1.1.0",
-	url = "https://sqlmatches.com/"
+	name = NAME,
+	author = AUTHORS,
+	description = DESC,
+	version = VERSION,
+	url = URL
 }
 
 public void OnAllPluginsLoaded() {
@@ -68,9 +74,10 @@ public void OnLibraryRemoved(const char[] name) {
 }
 
 void LoadCvarHttp() {
-	char sApiKey[28];
-	char sBase64ApiKey[100];
-	char sBasicAuth[106];
+	char sApiKey[40];
+	char sApiKeyUser[41];
+	char sBase64ApiKey[150];
+	char sBasicAuth[156];
 	char sApiUrl[512];
 
 	g_cvApiKey.GetString(sApiKey, sizeof(sApiKey));
@@ -84,18 +91,19 @@ void LoadCvarHttp() {
 		LogError("Error: ConVar sm_sqlmatches_key shouldn't be empty.");
 	}
 
-	EncodeBase64(sBase64ApiKey, sizeof(sBase64ApiKey), sApiKey);
+	Format(sApiKeyUser, sizeof(sApiKeyUser), ":%s", sApiKey);
+	EncodeBase64(sBase64ApiKey, sizeof(sBase64ApiKey), sApiKeyUser);
 	Format(sBasicAuth, sizeof(sBasicAuth), "Basic %s", sBase64ApiKey);
 
 	// Create HTTP Client
 	g_Client = new HTTPClient(sApiUrl);
 
-	g_Client.SetHeader("Content-Type:", "application/json");
+	g_Client.SetHeader("Content-Type", "application/json");
 	g_Client.SetHeader("Authorization", sBasicAuth);
 
 	g_Client.FollowLocation = true;
 	g_Client.ConnectTimeout = 300;
-	g_Client.Timeout = 300;
+	g_Client.Timeout = 600;
 }
 
 public void OnPluginStart() {
@@ -110,7 +118,7 @@ public void OnPluginStart() {
 
 	// Register ConVars
 	g_cvApiKey = CreateConVar("sm_sqlmatches_key", "", "API key for sqlmatches API", FCVAR_PROTECTED);
-	g_cvApiUrl = CreateConVar("sm_sqlmatches_url", "https://api.sqlmatches.com/", "URL of sqlmatches base API route", FCVAR_PROTECTED);
+	g_cvApiUrl = CreateConVar("sm_sqlmatches_url", "https://sqlmatches.com/api/", "URL of sqlmatches base API route.", FCVAR_PROTECTED);
 	g_cvEnableAutoConfig = CreateConVar("sm_sqlmatches_autoconfig", "1", "Used to auto config.", FCVAR_PROTECTED);
 	g_cvEnableAnnounce = CreateConVar("sm_sqlmatches_announce", "1", "Show version announce", FCVAR_PROTECTED);
 
@@ -123,6 +131,15 @@ public void OnPluginStart() {
 }
 
 public void OnMapStart() {
+	if (!StrEqual(g_sMatchId, "")){
+		// Format request
+		char sUrl[1024];
+		Format(sUrl, sizeof(sUrl), "match/%s/", g_sMatchId);
+
+		// Send request
+		g_Client.Delete(sUrl, HTTP_OnEndMatch);
+	}
+
 	if(g_cvEnableAutoConfig.BoolValue == 1) {
 		ServerCommand("tv_enable 1");
 		ServerCommand("tv_autorecord 0");
@@ -132,7 +149,7 @@ public void OnMapStart() {
 
 	if(g_cvEnableAnnounce.BoolValue == 1) {
 		char sUrl[1024];
-		Format(sUrl, sizeof(sUrl), "version/%s/", PlInfo_Version);
+		Format(sUrl, sizeof(sUrl), "version/%s/", VERSION);
 
 		g_Client.Get(sUrl, HTTP_OnMapLoad);
 	}
@@ -141,6 +158,11 @@ public void OnMapStart() {
 void HTTP_OnMapLoad(HTTPResponse response, any value, const char[] error) {
 	if(strlen(error) > 0) {
 		LogError("HTTP_OnMapLoad - Error string - Failed! Error: %s", error);
+		return;
+	}
+
+	if (response.Data == null) {
+		// Invalid JSON response
 		return;
 	}
 
@@ -162,6 +184,27 @@ void HTTP_OnMapLoad(HTTPResponse response, any value, const char[] error) {
 	data.GetString("message", sVersionMessage, sizeof(sVersionMessage));
 
 	PrintToChatAll("%s %s", PREFIX, sVersionMessage);
+}
+
+void HTTP_OnEndMatch(HTTPResponse response, any value, const char[] error) {
+	if(strlen(error) > 0) {
+		LogError("HTTP_OnEndMatch - Error string - Failed! Error: %s", error);
+		return;
+	}
+
+	// Get response data
+	JSONObject responseData = view_as<JSONObject>(response.Data);
+
+	// Log errors if any occurred
+	if(response.Status != HTTPStatus_OK) {
+		// Error string
+		char errorInfo[1024];
+		responseData.GetString("error", errorInfo, sizeof(errorInfo));
+		LogError("HTTP_OnEndMatch - Invalid status code - Failed! Error: %s", errorInfo);
+		return;
+	}
+
+	g_sMatchId = "";
 }
 
 public void Event_RoundStart(Event event, const char[] name, bool dontBroadcast) {
@@ -269,46 +312,6 @@ void HTTP_OnCreateMatch(HTTPResponse response, any value, const char[] error) {
 	PrintToServer("%s Match %s created successfully.", PREFIX, g_sMatchId);
 	PrintToChatAll("%s Match has been created", PREFIX);
 	ServerCommand("tv_record \"%s\"", g_sMatchId);
-}
-
-void EndMatch() {
-	if(!InMatch()) return;
-
-	// Format request
-	char sUrl[1024];
-	Format(sUrl, sizeof(sUrl), "match/%s/", g_sMatchId);
-
-	// Send request
-	g_Client.Delete(sUrl, HTTP_OnEndMatch);
-}
-
-void HTTP_OnEndMatch(HTTPResponse response, any value, const char[] error) {
-	if(strlen(error) > 0) {
-		LogError("HTTP_OnEndMatch - Error string - Failed! Error: %s", error);
-		return;
-	}
-
-	// Get response data
-	JSONObject responseData = view_as<JSONObject>(response.Data);
-
-	// Log errors if any occurred
-	if(response.Status != HTTPStatus_OK) {
-		// Error string
-		char errorInfo[1024];
-		responseData.GetString("error", errorInfo, sizeof(errorInfo));
-		LogError("HTTP_OnEndMatch - Invalid status code - Failed! Error: %s", errorInfo);
-		return;
-	}
-
-	// End match
-	PrintToServer("%s Match ended successfully.", PREFIX);
-	PrintToChatAll("%s Match has ended.", PREFIX);
-
-	if(FindConVar("tv_enable").IntValue == 1) {
-		UploadDemo(g_sMatchId);
-	}
-
-	g_sMatchId = "";
 }
 
 void UpdateMatch(int team_1_score = -1, int team_2_score = -1, const MatchUpdatePlayer[] players, int size = -1, bool dontUpdate = false, int team_1_side = -1, int team_2_side = -1, bool end = false) {
