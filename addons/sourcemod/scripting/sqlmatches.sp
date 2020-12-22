@@ -413,7 +413,7 @@ void UploadDemo(const char[] matchId) {
 	PrintToChatAll("%s Uploading compressed demo...", PREFIX);
 }
 
-public CompressedDemo(BZ_Error iError, String sIn[], String sOut[], any data) {
+public CompressedDemo(BZ_Error iError, const char sIn[], const char sOut[], any data) {
 	if (iError != BZ_OK) {
 		LogBZ2Error(iError);
 	}
