@@ -146,18 +146,18 @@ public void OnMapStart() {
 		g_Client.Delete(sUrl, HTTP_OnEndMatch);
 	}
 
-	if (g_cvStartRoundUpload.BoolValue == 1 && !StrEqual(g_sMatchIdBefore, "")) {
+	if (g_cvStartRoundUpload.IntValue == 1 && !StrEqual(g_sMatchIdBefore, "")) {
 		UploadDemo(g_sMatchIdBefore);
 	}
 
-	if (g_cvEnableAutoConfig.BoolValue == 1) {
+	if (g_cvEnableAutoConfig.IntValue == 1) {
 		ServerCommand("tv_enable 1");
 		ServerCommand("tv_autorecord 0");
 		ServerCommand("sv_hibernate_when_empty 0");
 		ServerCommand("mp_endmatch_votenextmap 20");
 	}	
 
-	if (g_cvEnableAnnounce.BoolValue == 1) {
+	if (g_cvEnableAnnounce.IntValue == 1) {
 		char sUrl[1024];
 		Format(sUrl, sizeof(sUrl), "version/%s/", VERSION);
 
@@ -413,7 +413,7 @@ void UploadDemo(const char[] matchId) {
 	PrintToChatAll("%s Uploading compressed demo...", PREFIX);
 }
 
-public CompressedDemo(BZ_Error iError, const char sIn[], const char sOut[], any data) {
+void CompressedDemo(BZ_Error iError, const char[] sIn, const char[] sOut, any data) {
 	if (iError != BZ_OK) {
 		LogBZ2Error(iError);
 	}
@@ -487,7 +487,7 @@ public Action Event_MatchEnd(Event event, const char[] name, bool dontBroadcast)
 	if (!InMatch()) return;
 
 	UpdateMatch(.end = true);
-	if (g_cvStartRoundUpload.BoolValue == 0) {
+	if (g_cvStartRoundUpload.IntValue == 0) {
 		if(FindConVar("tv_enable").IntValue == 1) {
 			UploadDemo(g_sMatchId);
 		}
