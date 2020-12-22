@@ -4,11 +4,12 @@
 #include <ripext>
 #include <base64>
 #include <bzip2>
+#include <multicolors>
 
 #pragma semicolon 1
 #pragma newdecls required
 
-#define PREFIX		"[SQLMatches.com]"
+#define PREFIX		"{default}[{orchid}SQLMatches.com{default}] "
 #define TEAM_CT 	0
 #define TEAM_T 		1
 
@@ -193,7 +194,7 @@ void HTTP_OnMapLoad(HTTPResponse response, any value, const char[] error) {
 	char sVersionMessage[64];
 	data.GetString("message", sVersionMessage, sizeof(sVersionMessage));
 
-	PrintToChatAll("%s %s", PREFIX, sVersionMessage);
+	CPrintToChatAll("%s{lightred}%s", PREFIX, sVersionMessage);
 }
 
 void HTTP_OnEndMatch(HTTPResponse response, any value, const char[] error) {
@@ -218,10 +219,10 @@ void HTTP_OnEndMatch(HTTPResponse response, any value, const char[] error) {
 }
 
 public void Event_RoundStart(Event event, const char[] name, bool dontBroadcast) {
-	if (!InMatch()) {
-		CreateMatch();
-	} else {
+	if (InMatch()) {
 		UpdateMatch();
+	} else if (!InWarmup()) {
+		CreateMatch();
 	}
 }
 
@@ -322,7 +323,7 @@ void HTTP_OnCreateMatch(HTTPResponse response, any value, const char[] error) {
 	JSONObject data = view_as<JSONObject>(responseData.Get("data"));
 	data.GetString("match_id", g_sMatchId, sizeof(g_sMatchId));
 	PrintToServer("%s Match %s created successfully.", PREFIX, g_sMatchId);
-	PrintToChatAll("%s Match has been created", PREFIX);
+	CPrintToChatAll("%sMatch has been {green}created", PREFIX);
 	ServerCommand("tv_record \"%s\"", g_sMatchId);
 }
 
@@ -388,7 +389,7 @@ void HTTP_OnUpdateMatch(HTTPResponse response, any value, const char[] error) {
 		return;
 	}
 
-	PrintToServer("%s Match updated successfully.", PREFIX);
+	CPrintToChatAll("%sMatch updated {green}successfully.", PREFIX);
 }
 
 void UploadDemo(const char[] matchId) {
@@ -424,7 +425,7 @@ void CompressedDemo(BZ_Error iError, const char[] sIn, const char[] sOut, DataPa
 	// Send request
 	g_Client.UploadFile(sUrl, sOut, HTTP_OnUploadDemo);
 
-	PrintToChatAll("%s Uploading compressed demo...", PREFIX);
+	CPrintToChatAll("%sUploading compressed demo...", PREFIX);
 }
 
 void HTTP_OnUploadDemo(HTTPStatus status, DataPack pack, const char[] error) {
@@ -433,7 +434,7 @@ void HTTP_OnUploadDemo(HTTPStatus status, DataPack pack, const char[] error) {
 		return;
 	}
 
-	PrintToChatAll("%s Demo uploaded successfully.", PREFIX);
+	CPrintToChatAll("%sDemo uploaded {green}successfully{default}.", PREFIX);
 }
 
 public void Event_WeaponFired(Event event, const char[] name, bool dontBroadcast) {
