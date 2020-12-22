@@ -399,24 +399,32 @@ void UploadDemo(const char[] matchId) {
 		return;
 	}
 
+	DataPack data = new DataPack();
+	data.WriteString(matchId);
+
 	char formattedBzipDemo[PLATFORM_MAX_PATH];
 	Format(formattedBzipDemo, sizeof(formattedBzipDemo), "%s.bz2", formattedDemo);
-	BZ2_CompressFile(formattedDemo, formattedBzipDemo, g_iCompressionLevel, CompressedDemo);
+	BZ2_CompressFile(formattedDemo, formattedBzipDemo, g_iCompressionLevel, CompressedDemo, data);
+}
+
+void CompressedDemo(BZ_Error iError, const char[] sIn, const char[] sOut, DataPack data) {
+	if (iError != BZ_OK) {
+		LogBZ2Error(iError);
+		return;
+	}
+
+	char matchId[38];
+	data.Reset();
+	data.ReadString(matchId, sizeof(matchId));
 
 	// Format request
 	char sUrl[1024];
 	Format(sUrl, sizeof(sUrl), "match/%s/upload/", matchId);
 
 	// Send request
-	g_Client.UploadFile(sUrl, formattedBzipDemo, HTTP_OnUploadDemo);
+	g_Client.UploadFile(sUrl, sOut, HTTP_OnUploadDemo);
 
 	PrintToChatAll("%s Uploading compressed demo...", PREFIX);
-}
-
-void CompressedDemo(BZ_Error iError, const char[] sIn, const char[] sOut, any data) {
-	if (iError != BZ_OK) {
-		LogBZ2Error(iError);
-	}
 }
 
 void HTTP_OnUploadDemo(HTTPStatus status, DataPack pack, const char[] error) {
