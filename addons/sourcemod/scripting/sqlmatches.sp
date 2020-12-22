@@ -18,6 +18,8 @@
 #define VERSION 	"1.1.0"
 #define URL			"https://sqlmatches.com"
 
+int g_iCompressionLevel = 9;
+
 bool g_bPugSetupAvailable;
 bool g_bGet5Available;
 bool g_bAlreadySwapped;
@@ -30,7 +32,7 @@ ConVar g_cvApiUrl;
 ConVar g_cvApiKey;
 ConVar g_cvEnableAutoConfig;
 ConVar g_cvEnableAnnounce;
-ConVar g_cvUploadType;
+ConVar g_cvStartRoundUpload;
 
 HTTPClient g_Client;
 
@@ -135,7 +137,7 @@ public void OnPluginStart() {
 }
 
 public void OnMapStart() {
-	if (!StrEqual(g_sMatchId, "")){
+	if (!StrEqual(g_sMatchId, "")) {
 		// Format request
 		char sUrl[1024];
 		Format(sUrl, sizeof(sUrl), "match/%s/", g_sMatchId);
@@ -153,7 +155,7 @@ public void OnMapStart() {
 		ServerCommand("tv_autorecord 0");
 		ServerCommand("sv_hibernate_when_empty 0");
 		ServerCommand("mp_endmatch_votenextmap 20");
-	}
+	}	
 
 	if (g_cvEnableAnnounce.BoolValue == 1) {
 		char sUrl[1024];
@@ -398,8 +400,8 @@ void UploadDemo(const char[] matchId) {
 	}
 
 	char formattedBzipDemo[PLATFORM_MAX_PATH];
-	Format(formattedBzipDemo, sizeof(formattedBzipDemo), "%s.bz2", formattedDemo)
-	BZ2_CompressFile(formattedDemo, formattedBzipDemo, 6);
+	Format(formattedBzipDemo, sizeof(formattedBzipDemo), "%s.bz2", formattedDemo);
+	BZ2_CompressFile(formattedDemo, formattedBzipDemo, g_iCompressionLevel, CompressedDemo);
 
 	// Format request
 	char sUrl[1024];
@@ -408,13 +410,12 @@ void UploadDemo(const char[] matchId) {
 	// Send request
 	g_Client.UploadFile(sUrl, formattedBzipDemo, HTTP_OnUploadDemo);
 
-	PrintToChatAll("%s Uploading demo...", PREFIX);
+	PrintToChatAll("%s Uploading compressed demo...", PREFIX);
 }
 
-vold CompressedDemo(BZ_Error:iError, String:sIn[], String:sOut[], any:data) {
+public CompressedDemo(BZ_Error iError, String sIn[], String sOut[], any data) {
 	if (iError != BZ_OK) {
 		LogBZ2Error(iError);
-		return;
 	}
 }
 
@@ -562,12 +563,8 @@ stock JSONArray GetPlayersJson(const MatchUpdatePlayer[] players, int size) {
 }
 
 stock bool IsValidClient(int client) {
-	if (client >= 1 &&
-	client <= MaxClients &&
-	IsClientConnected(client) &&
-	IsClientInGame(client) &&
-	!IsFakeClient(client) &&
-	(GetClientTeam(client) == CS_TEAM_CT || GetClientTeam(client) == CS_TEAM_T)) {
+	if (client >= 1 && client <= MaxClients && IsClientConnected(client) && IsClientInGame(client) &&
+		!IsFakeClient(client) && (GetClientTeam(client) == CS_TEAM_CT || GetClientTeam(client) == CS_TEAM_T)) {
 		return true;
 	}
 
