@@ -414,6 +414,8 @@ void CompressedDemo(BZ_Error iError, const char[] sIn, const char[] sOut, DataPa
 		return;
 	}
 
+	CPrintToChatAll("%sUploading compressed demo...", PREFIX);
+
 	char matchId[38];
 	data.Reset();
 	data.ReadString(matchId, sizeof(matchId));
@@ -424,8 +426,6 @@ void CompressedDemo(BZ_Error iError, const char[] sIn, const char[] sOut, DataPa
 
 	// Send request
 	g_Client.UploadFile(sUrl, sOut, HTTP_OnUploadDemo);
-
-	CPrintToChatAll("%sUploading compressed demo...", PREFIX);
 }
 
 void HTTP_OnUploadDemo(HTTPStatus status, DataPack pack, const char[] error) {
