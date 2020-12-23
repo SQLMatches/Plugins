@@ -20,6 +20,7 @@
 #define URL			"https://sqlmatches.com"
 
 int g_iCompressionLevel = 9;
+int g_iMinPlayersNeeded = 2;
 
 bool g_bPugSetupAvailable;
 bool g_bGet5Available;
@@ -259,6 +260,12 @@ void ResetVars(int Client) {
 
 void CreateMatch() {
 	if (InMatch()) return;
+
+	int realClientCount = GetRealClientCount();
+	if (realClientCount < g_iMinPlayersNeeded) {
+		CPrintToChatAll("%s%i more player(s) needed!", PREFIX, g_iMinPlayersNeeded - realClientCount);
+		return;
+	}
 
 	// Setup JSON data
 	char sTeamNameCT[64];
@@ -578,4 +585,16 @@ stock bool IsValidClient(int client) {
 	}
 
 	return false;
+}
+
+stock int GetRealClientCount() {
+    int iClients = 0;
+
+    for (int i = 1; i <= MaxClients; i++) {
+        if (IsValidClient(i)) {
+            iClients++;
+        }
+    }
+
+    return iClients;
 }
