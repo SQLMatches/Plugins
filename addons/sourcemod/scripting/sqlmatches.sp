@@ -194,7 +194,7 @@ void HTTP_OnMapLoad(HTTPResponse response, any value, const char[] error) {
 
 	JSONObject data = view_as<JSONObject>(responseData.Get("data"));
 
-	char sVersionMessage[64];
+	char sVersionMessage[66];
 	data.GetString("message", sVersionMessage, sizeof(sVersionMessage));
 
 	CPrintToChatAll("%s{lightred}%s", PREFIX, sVersionMessage);
