@@ -35,6 +35,7 @@ ConVar g_cvApiKey;
 ConVar g_cvEnableAutoConfig;
 ConVar g_cvEnableAnnounce;
 ConVar g_cvStartRoundUpload;
+ConVar g_cvDeleteAfterUpload;
 
 HTTPClient g_Client;
 
@@ -129,6 +130,7 @@ public void OnPluginStart() {
 	g_cvEnableAutoConfig = CreateConVar("sm_sqlmatches_autoconfig", "1", "Used to auto config.", FCVAR_PROTECTED);
 	g_cvEnableAnnounce = CreateConVar("sm_sqlmatches_announce", "1", "Show version announce", FCVAR_PROTECTED);
 	g_cvStartRoundUpload = CreateConVar("sm_sqlmatches_start_round_upload", "0", "0 = Upload demo at match end; 1 = Upload demo at start of next match.", FCVAR_PROTECTED);
+	g_cvDeleteAfterUpload = CreateConVar("sm_sqlmatches_delete_after_upload", "1", "Delete demo file locally after upload.", FCVAR_PROTECTED);
 
 	g_cvApiUrl.AddChangeHook(OnAPIChanged);
 	g_cvApiKey.AddChangeHook(OnAPIChanged);
@@ -400,19 +402,19 @@ void HTTP_OnUpdateMatch(HTTPResponse response, any value, const char[] error) {
 }
 
 void UploadDemo(const char[] matchId) {
-	char formattedDemo[PLATFORM_MAX_PATH];
-	Format(formattedDemo, sizeof(formattedDemo), "%s.dem", matchId);
-	if (!FileExists(formattedDemo)) {
-		LogError("Failed to upload demo. Error: File \"%s\" does not exist.", formattedDemo);
+	char demoPathway[PLATFORM_MAX_PATH];
+	Format(demoPathway, sizeof(demoPathway), "%s.dem", matchId);
+	if (!FileExists(demoPathway)) {
+		LogError("Failed to upload demo. Error: File \"%s\" does not exist.", demoPathway);
 		return;
 	}
 
 	DataPack data = new DataPack();
 	data.WriteString(matchId);
 
-	char formattedBzipDemo[PLATFORM_MAX_PATH];
-	Format(formattedBzipDemo, sizeof(formattedBzipDemo), "%s.bz2", formattedDemo);
-	BZ2_CompressFile(formattedDemo, formattedBzipDemo, g_iCompressionLevel, CompressedDemo, data);
+	char bzipDemoPathway[PLATFORM_MAX_PATH];
+	Format(bzipDemoPathway, sizeof(bzipDemoPathway), "%s.bz2", demoPathway);
+	BZ2_CompressFile(demoPathway, bzipDemoPathway, g_iCompressionLevel, CompressedDemo, data);
 }
 
 void CompressedDemo(BZ_Error iError, const char[] sIn, const char[] sOut, DataPack data) {
@@ -432,13 +434,29 @@ void CompressedDemo(BZ_Error iError, const char[] sIn, const char[] sOut, DataPa
 	Format(sUrl, sizeof(sUrl), "match/%s/upload/", matchId);
 
 	// Send request
-	g_Client.UploadFile(sUrl, sOut, HTTP_OnUploadDemo);
+	g_Client.UploadFile(sUrl, sOut, HTTP_OnUploadDemo, data);
 }
 
 void HTTP_OnUploadDemo(HTTPStatus status, DataPack pack, const char[] error) {
 	if (strlen(error) > 0 || status != HTTPStatus_OK) {
 		LogError("HTTP_OnUploadDemo Failed! Error: %s", error);
 		return;
+	}
+
+	char matchId[38];
+	pack.Reset();
+	pack.ReadString(matchId, sizeof(matchId));
+
+	char demoPathway[PLATFORM_MAX_PATH];
+	Format(demoPathway, sizeof(demoPathway), "%s.dem", matchId);
+
+	char bzipDemoPathway[PLATFORM_MAX_PATH];
+	Format(bzipDemoPathway, sizeof(bzipDemoPathway), "%s.bz2", demoPathway);
+
+	DeleteFile(bzipDemoPathway);
+
+	if (g_cvDeleteAfterUpload.IntValue == 1) {
+		DeleteFile(demoPathway);
 	}
 
 	CPrintToChatAll("%sDemo uploaded {green}successfully{default}.", PREFIX);
