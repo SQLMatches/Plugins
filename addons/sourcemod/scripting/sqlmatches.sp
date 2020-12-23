@@ -158,8 +158,10 @@ public void OnMapStart() {
 		ServerCommand("tv_enable 1");
 		ServerCommand("tv_autorecord 0");
 		ServerCommand("sv_hibernate_when_empty 0");
-		ServerCommand("mp_endmatch_votenextmap 20");
-	}	
+		if (g_cvStartRoundUpload.IntValue == 0) {
+			ServerCommand("mp_endmatch_votenextmap 20");
+		}
+	}
 
 	if (g_cvEnableAnnounce.IntValue == 1) {
 		char sUrl[1024];
