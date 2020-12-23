@@ -265,7 +265,7 @@ void CreateMatch() {
 
 	int realClientCount = GetRealClientCount();
 	if (realClientCount < g_iMinPlayersNeeded) {
-		CPrintToChatAll("%s%i more player(s) needed!", PREFIX, g_iMinPlayersNeeded - realClientCount);
+		CPrintToChatAll("%s{red}%i{default} more player(s) needed in order for the match to start recording.", PREFIX, g_iMinPlayersNeeded - realClientCount);
 		return;
 	}
 
