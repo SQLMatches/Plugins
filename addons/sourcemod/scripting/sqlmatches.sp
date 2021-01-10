@@ -338,7 +338,7 @@ void HTTP_OnCreateMatch(HTTPResponse response, any value, const char[] error) {
 	ServerCommand("tv_record \"%s\"", g_sMatchId);
 }
 
-void UpdateMatch(int team_1_score = -1, int team_2_score = -1, bool dontUpdate = false, int team_1_side = -1, int team_2_side = -1, bool end = false, bool dontReset = false) {
+void UpdateMatch(int team_1_score = -1, int team_2_score = -1, bool dontUpdate = false, int team_1_side = -1, int team_2_side = -1, bool end = false) {
 	if (!InMatch() && end == false) return;
 
 	// Set scores if not passed in manually
@@ -363,13 +363,6 @@ void UpdateMatch(int team_1_score = -1, int team_2_score = -1, bool dontUpdate =
 		JSONArray playersArray = GetPlayersJson(g_PlayerStats, sizeof(g_PlayerStats));
 		json.Set("players", playersArray);
 		delete playersArray;
-	}
-
-	if (!dontReset) {
-		for (int i = 0; i < sizeof(g_PlayerStats); i++) {
-			if (!IsValidClient(i)) continue;
-			ResetVars(i);
-		}
 	}
 
 	// Set optional data
@@ -518,8 +511,6 @@ public Action Event_PlayerDisconnect(Event event, const char[] name, bool dontBr
 	if (sSteamID[7] != ':') return Plugin_Handled;
 	if (!GetClientAuthId(Client, AuthId_SteamID64, sSteamID, sizeof(sSteamID))) return Plugin_Handled;
 
-	UpdateMatch(.dontReset = true);
-
 	// Reset client vars
 	ResetVars(Client);
 
@@ -565,11 +556,11 @@ stock void UpdatePlayerStats(MatchUpdatePlayer[] players, int size) {
 
 		players[Client].Alive = view_as<bool>(GetEntProp(ent, Prop_Send, "m_bAlive", _, Client));
 		players[Client].Ping = GetEntProp(ent, Prop_Send, "m_iPing", _, Client);
-		players[Client].Kills = GetEntProp(ent, Prop_Send, "m_iKills", _, Client);
-		players[Client].Assists = GetEntProp(ent, Prop_Send, "m_iAssists", _, Client);
-		players[Client].Deaths = GetEntProp(ent, Prop_Send, "m_iDeaths", _, Client);
-		players[Client].MVPs = GetEntProp(ent, Prop_Send, "m_iMVPs", _, Client);
-		players[Client].Score = GetEntProp(ent, Prop_Send, "m_iScore", _, Client);
+		players[Client].Kills = GetEntProp(ent, Prop_Send, "m_iKills", _, Client) - players[Client].Kills;
+		players[Client].Assists = GetEntProp(ent, Prop_Send, "m_iAssists", _, Client) - players[Client].Assists;
+		players[Client].Deaths = GetEntProp(ent, Prop_Send, "m_iDeaths", _, Client) - players[Client].Deaths;
+		players[Client].MVPs = GetEntProp(ent, Prop_Send, "m_iMVPs", _, Client) - players[Client].MVPs;
+		players[Client].Score = GetEntProp(ent, Prop_Send, "m_iScore", _, Client) - players[Client].Score;
 
 		GetClientName(Client, players[Client].Username, sizeof(MatchUpdatePlayer::Username));
 		GetClientAuthId(Client, AuthId_SteamID64, players[Client].SteamID, sizeof(MatchUpdatePlayer::SteamID));
@@ -602,6 +593,8 @@ stock JSONArray GetPlayersJson(const MatchUpdatePlayer[] players, int size) {
 
 		json.Push(player);
 		delete player;
+
+		ResetVars(Client);
 	}
 
 	return json;
