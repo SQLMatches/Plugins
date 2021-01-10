@@ -20,7 +20,7 @@
 #define URL			"https://sqlmatches.com"
 
 int g_iCompressionLevel = 9;
-int g_iMinPlayersNeeded = 2;
+int g_iMinPlayersNeeded = 1;
 
 bool g_bPugSetupAvailable;
 bool g_bGet5Available;
