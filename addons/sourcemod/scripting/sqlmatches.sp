@@ -338,7 +338,7 @@ void HTTP_OnCreateMatch(HTTPResponse response, any value, const char[] error) {
 	ServerCommand("tv_record \"%s\"", g_sMatchId);
 }
 
-void UpdateMatch(int team_1_score = -1, int team_2_score = -1, bool dontUpdate = false, int team_1_side = -1, int team_2_side = -1, bool end = false) {
+void UpdateMatch(int team_1_score = -1, int team_2_score = -1, bool dontUpdate = false, int team_1_side = -1, int team_2_side = -1, bool end = false, bool dontReset = false) {
 	if (!InMatch() && end == false) return;
 
 	// Set scores if not passed in manually
@@ -363,6 +363,14 @@ void UpdateMatch(int team_1_score = -1, int team_2_score = -1, bool dontUpdate =
 		JSONArray playersArray = GetPlayersJson(g_PlayerStats, sizeof(g_PlayerStats));
 		json.Set("players", playersArray);
 		delete playersArray;
+	}
+
+	if (!dontReset) {
+		for (int i = 0; i < size; i++) {
+			int Client = players[i].Index;
+			if (!IsValidClient(Client)) continue;
+			ResetVars(Client);
+		}
 	}
 
 	// Set optional data
@@ -490,7 +498,7 @@ public void Event_HalfTime(Event event, const char[] name, bool dontBroadcast) {
 	if (!g_bAlreadySwapped) {
 		LogMessage("Event_HalfTime(): Starting team swap...");
 
-		UpdateMatch(.team_1_side = 1, .team_2_side = 0, .dontUpdate = false);
+		UpdateMatch(.team_1_side = 1, .team_2_side = 0);
 
 		g_bAlreadySwapped = true;
 	} else {
@@ -511,7 +519,7 @@ public Action Event_PlayerDisconnect(Event event, const char[] name, bool dontBr
 	if (sSteamID[7] != ':') return Plugin_Handled;
 	if (!GetClientAuthId(Client, AuthId_SteamID64, sSteamID, sizeof(sSteamID))) return Plugin_Handled;
 
-	UpdateMatch();
+	UpdateMatch(.dontReset = true);
 
 	// Reset client vars
 	ResetVars(Client);
@@ -573,7 +581,9 @@ stock JSONArray GetPlayersJson(const MatchUpdatePlayer[] players, int size) {
 	JSONArray json = new JSONArray();
 
 	for(int i = 0; i < size; i++) {
-		if(!IsValidClient(players[i].Index)) continue;
+		int Client = players[i].Index;
+
+		if(!IsValidClient(Client)) continue;
 		JSONObject player = new JSONObject();
 
 		player.SetString("name", players[i].Username);
@@ -589,7 +599,7 @@ stock JSONArray GetPlayersJson(const MatchUpdatePlayer[] players, int size) {
 		player.SetInt("shots_hit", players[i].ShotsHit);
 		player.SetInt("mvps", players[i].MVPs);
 		player.SetInt("score", players[i].Score);
-		player.SetBool("disconnected", IsClientInGame(players[i].Index));
+		player.SetBool("disconnected", IsClientInGame(Client));
 
 		json.Push(player);
 		delete player;
