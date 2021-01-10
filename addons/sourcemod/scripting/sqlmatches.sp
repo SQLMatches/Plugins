@@ -366,10 +366,9 @@ void UpdateMatch(int team_1_score = -1, int team_2_score = -1, bool dontUpdate =
 	}
 
 	if (!dontReset) {
-		for (int i = 0; i < size; i++) {
-			int Client = players[i].Index;
-			if (!IsValidClient(Client)) continue;
-			ResetVars(Client);
+		for (int i = 0; i < sizeof(g_PlayerStats); i++) {
+			if (!IsValidClient(i)) continue;
+			ResetVars(i);
 		}
 	}
 
