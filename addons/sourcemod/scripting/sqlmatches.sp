@@ -490,7 +490,7 @@ public void Event_HalfTime(Event event, const char[] name, bool dontBroadcast) {
 	if (!g_bAlreadySwapped) {
 		LogMessage("Event_HalfTime(): Starting team swap...");
 
-		UpdateMatch(.team_1_side = 1, .team_2_side = 0);
+		UpdateMatch(.team_1_side = 1, .team_2_side = 0, .dontUpdate = false);
 
 		g_bAlreadySwapped = true;
 	} else {
@@ -510,6 +510,8 @@ public Action Event_PlayerDisconnect(Event event, const char[] name, bool dontBr
 	event.GetString("networkid", sSteamID, sizeof(sSteamID));
 	if (sSteamID[7] != ':') return Plugin_Handled;
 	if (!GetClientAuthId(Client, AuthId_SteamID64, sSteamID, sizeof(sSteamID))) return Plugin_Handled;
+
+	UpdateMatch();
 
 	// Reset client vars
 	ResetVars(Client);
@@ -556,11 +558,11 @@ stock void UpdatePlayerStats(MatchUpdatePlayer[] players, int size) {
 
 		players[Client].Alive = view_as<bool>(GetEntProp(ent, Prop_Send, "m_bAlive", _, Client));
 		players[Client].Ping = GetEntProp(ent, Prop_Send, "m_iPing", _, Client);
-		players[Client].Kills = GetEntProp(ent, Prop_Send, "m_iKills", _, Client) - players[Client].Kills;
-		players[Client].Assists = GetEntProp(ent, Prop_Send, "m_iAssists", _, Client) - players[Client].Assists;
-		players[Client].Deaths = GetEntProp(ent, Prop_Send, "m_iDeaths", _, Client) - players[Client].Deaths;
-		players[Client].MVPs = GetEntProp(ent, Prop_Send, "m_iMVPs", _, Client) - players[Client].MVPs;
-		players[Client].Score = GetEntProp(ent, Prop_Send, "m_iScore", _, Client) - players[Client].Score;
+		players[Client].Kills = GetEntProp(ent, Prop_Send, "m_iKills", _, Client);
+		players[Client].Assists = GetEntProp(ent, Prop_Send, "m_iAssists", _, Client);
+		players[Client].Deaths = GetEntProp(ent, Prop_Send, "m_iDeaths", _, Client);
+		players[Client].MVPs = GetEntProp(ent, Prop_Send, "m_iMVPs", _, Client);
+		players[Client].Score = GetEntProp(ent, Prop_Send, "m_iScore", _, Client);
 
 		GetClientName(Client, players[Client].Username, sizeof(MatchUpdatePlayer::Username));
 		GetClientAuthId(Client, AuthId_SteamID64, players[Client].SteamID, sizeof(MatchUpdatePlayer::SteamID));
@@ -571,9 +573,7 @@ stock JSONArray GetPlayersJson(const MatchUpdatePlayer[] players, int size) {
 	JSONArray json = new JSONArray();
 
 	for(int i = 0; i < size; i++) {
-		int Client = players[i].Index;
-
-		if(!IsValidClient(Client)) continue;
+		if(!IsValidClient(players[i].Index)) continue;
 		JSONObject player = new JSONObject();
 
 		player.SetString("name", players[i].Username);
@@ -589,12 +589,10 @@ stock JSONArray GetPlayersJson(const MatchUpdatePlayer[] players, int size) {
 		player.SetInt("shots_hit", players[i].ShotsHit);
 		player.SetInt("mvps", players[i].MVPs);
 		player.SetInt("score", players[i].Score);
-		player.SetBool("disconnected", IsClientInGame(Client));
+		player.SetBool("disconnected", IsClientInGame(players[i].Index));
 
 		json.Push(player);
 		delete player;
-
-		ResetVars(Client);
 	}
 
 	return json;
