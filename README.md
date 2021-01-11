@@ -25,6 +25,7 @@ Visit your owner panel on [SQLMatches.com](https://sqlmatches.com) under the com
 
 ## Thanks to
 - [The-Doggy](https://github.com/The-Doggy) - Contributor
+- [WardPearce](https://github.com/WardPearce) - Contributor
 - [ErikMinekus](https://github.com/ErikMinekus) - Contributor & created [REST in Pawn](https://github.com/ErikMinekus/sm-ripext)
 - [SirLamer](https://forums.alliedmods.net/showthread.php?t=101764) - [Base64](https://forums.alliedmods.net/showthread.php?t=101764)
 - [thraaawn](https://github.com/thraaawn) - [bzip2](https://github.com/thraaawn/SMbz2)
@@ -32,3 +33,4 @@ Visit your owner panel on [SQLMatches.com](https://sqlmatches.com) under the com
 - [SourceMod Include Library](https://github.com/JoinedSenses/SourceMod-IncludeLibrary) - Maintained includes
 - [borzaka](https://github.com/borzaka) - Contributor
 - [b3none](https://github.com/b3none) - Contributor
+- To all the developers who helped to make these packages
