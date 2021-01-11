@@ -23,6 +23,14 @@ Visit your owner panel on [SQLMatches.com](https://sqlmatches.com) under the com
     - Delete demo file after successfully upload.
 
 
+## Downloading compiled plugin
+- ![step 1](https://tinyurl.com/y38tmonn)
+    - Click the green tick.
+    - Then click details.
+- ![step 2](https://tinyurl.com/y3cdvmd6)
+    - Click artifacts.
+    - Then download 'Compiled plugins' & unzip it.
+
 ## Thanks to
 - [The-Doggy](https://github.com/The-Doggy) - Contributor
 - [WardPearce](https://github.com/WardPearce) - Contributor
