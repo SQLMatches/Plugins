@@ -208,7 +208,7 @@ void HTTP_OnMapLoad(HTTPResponse response, any value, const char[] error) {
 	CreateTimer(15.0, Timer_PrintVersionMessage, dataPack)
 }
 
-void Timer_PrintVersionMessage(Handle timer, DataPack data) {
+public Action Timer_PrintVersionMessage(Handle timer, DataPack data) {
 	char sVersionMessage[66];
 	data.Reset();
 	data.ReadString(sVersionMessage, sizeof(sVersionMessage));
