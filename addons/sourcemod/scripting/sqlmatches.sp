@@ -205,7 +205,7 @@ void HTTP_OnMapLoad(HTTPResponse response, any value, const char[] error) {
 	CreateTimer(15.0, Timer_PrintVersionMessage, sVersionMessage)
 }
 
-public Action Timer_PrintVersionMessage(Handle timer, const char[] sVersionMessage) {
+void Timer_PrintVersionMessage(Handle timer, const char[] sVersionMessage) {
 	CPrintToChatAll("%s{lightred}%s", PREFIX, sVersionMessage);
 }
 
