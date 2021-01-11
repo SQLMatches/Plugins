@@ -33,4 +33,4 @@ Visit your owner panel on [SQLMatches.com](https://sqlmatches.com) under the com
 - [SourceMod Include Library](https://github.com/JoinedSenses/SourceMod-IncludeLibrary) - Maintained includes
 - [borzaka](https://github.com/borzaka) - Contributor
 - [b3none](https://github.com/b3none) - Contributor
-- To all the developers who helped to make these packages
+- To all the developers who helped to make these packages!
