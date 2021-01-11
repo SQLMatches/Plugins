@@ -197,15 +197,13 @@ void HTTP_OnMapLoad(HTTPResponse response, any value, const char[] error) {
 		return;
 	}
 
-	JSONObject data = view_as<JSONObject>(responseData.Get("data"));
-
 	char sVersionMessage[66];
-	data.GetString("message", sVersionMessage, sizeof(sVersionMessage));
+	responseData.GetString("data", sVersionMessage, sizeof(sVersionMessage));
 
-	DataPack dataPack = new DataPack();
-	dataPack.WriteString(sVersionMessage);
+	DataPack data = new DataPack();
+	data.WriteString(sVersionMessage);
 
-	CreateTimer(15.0, Timer_PrintVersionMessage, dataPack);
+	CreateTimer(15.0, Timer_PrintVersionMessage, data);
 }
 
 public Action Timer_PrintVersionMessage(Handle timer, DataPack data) {
