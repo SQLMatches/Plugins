@@ -205,7 +205,7 @@ void HTTP_OnMapLoad(HTTPResponse response, any value, const char[] error) {
 	DataPack dataPack = new DataPack();
 	dataPack.WriteString(sVersionMessage);
 
-	CreateTimer(15.0, Timer_PrintVersionMessage, dataPack)
+	CreateTimer(15.0, Timer_PrintVersionMessage, dataPack);
 }
 
 public Action Timer_PrintVersionMessage(Handle timer, DataPack data) {
