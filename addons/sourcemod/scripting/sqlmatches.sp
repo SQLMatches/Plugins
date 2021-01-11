@@ -9,6 +9,9 @@
 #pragma semicolon 1
 #pragma newdecls required
 
+// Please leave the prefix as it is if you're using the hosted version.
+// Storing demos & hosting the site costs money & promoting us helps support us.
+// If you're self-hosting, feel more then welcome to change the prefix & anything else.
 #define PREFIX		"{default}[{orchid}SQLMatches.com{default}] "
 #define TEAM_CT 	0
 #define TEAM_T 		1
@@ -19,8 +22,10 @@
 #define VERSION 	"1.1.0"
 #define URL			"https://sqlmatches.com"
 
+// Keep compression as 9.
 int g_iCompressionLevel = 9;
-int g_iMinPlayersNeeded = 1;
+// Please leave this as 2, to help save us storage.
+int g_iMinPlayersNeeded = 2;
 
 bool g_bPugSetupAvailable;
 bool g_bGet5Available;
@@ -100,6 +105,7 @@ void LoadCvarHttp() {
 		LogError("Error: ConVar sm_sqlmatches_key shouldn't be empty.");
 	}
 
+	// Basic auth
 	Format(sApiKeyUser, sizeof(sApiKeyUser), ":%s", sApiKey);
 	EncodeBase64(sBase64ApiKey, sizeof(sBase64ApiKey), sApiKeyUser);
 	Format(sBasicAuth, sizeof(sBasicAuth), "Basic %s", sBase64ApiKey);
@@ -141,6 +147,7 @@ public void OnPluginStart() {
 }
 
 public void OnMapStart() {
+	// End past match if not ended correctly.
 	if (!StrEqual(g_sMatchId, "")) {
 		// Format request
 		char sUrl[1024];
@@ -150,24 +157,29 @@ public void OnMapStart() {
 		g_Client.Delete(sUrl, HTTP_OnEndMatch);
 	}
 
+	// Upload past match demo on map load.
 	if (g_cvStartRoundUpload.IntValue == 1 && !StrEqual(g_sMatchIdBefore, "")) {
 		UploadDemo(g_sMatchIdBefore);
 	}
 
+	// Auto set some CVARs.
 	if (g_cvEnableAutoConfig.IntValue == 1) {
 		ServerCommand("tv_enable 1");
 		ServerCommand("tv_autorecord 0");
 		ServerCommand("sv_hibernate_when_empty 0");
+		// Don't need to extend 'mp_endmatch_votenextmap' if demo uploads on next map load.
 		if (g_cvStartRoundUpload.IntValue == 0) {
 			ServerCommand("mp_endmatch_votenextmap 20");
 		}
 	}
 
+	// Annouce version message.
 	if (g_cvEnableAnnounce.IntValue == 1) {
 		char versions[3][20];
 		ExplodeString(VERSION, ".", versions, sizeof(versions), sizeof(versions[]));
 
 		char sUrl[1024];
+		//                                              major		 minor		  patch
 		Format(sUrl, sizeof(sUrl), "version/%s/%s/%s/", versions[0], versions[1], versions[2]);
 
 		g_Client.Get(sUrl, HTTP_OnMapLoad);
@@ -467,8 +479,10 @@ void HTTP_OnUploadDemo(HTTPStatus status, DataPack pack, const char[] error) {
 	char bzipDemoPathway[PLATFORM_MAX_PATH];
 	Format(bzipDemoPathway, sizeof(bzipDemoPathway), "%s.bz2", demoPathway);
 
+	// Always delete compressed demo.
 	DeleteFile(bzipDemoPathway);
 
+	// Delete demo file if allowed.
 	if (g_cvDeleteAfterUpload.IntValue == 1) {
 		DeleteFile(demoPathway);
 	}
