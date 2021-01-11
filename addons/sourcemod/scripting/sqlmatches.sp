@@ -202,10 +202,10 @@ void HTTP_OnMapLoad(HTTPResponse response, any value, const char[] error) {
 	char sVersionMessage[66];
 	data.GetString("message", sVersionMessage, sizeof(sVersionMessage));
 
-	DataPack data = new DataPack();
-	data.WriteString(sVersionMessage);
+	DataPack dataPack = new DataPack();
+	dataPack.WriteString(sVersionMessage);
 
-	CreateTimer(15.0, Timer_PrintVersionMessage, data)
+	CreateTimer(15.0, Timer_PrintVersionMessage, dataPack)
 }
 
 void Timer_PrintVersionMessage(Handle timer, DataPack data) {
