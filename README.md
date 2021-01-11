@@ -1,3 +1,7 @@
+# Need a larger upload size?
+Visit your owner panel on [SQLMatches.com](https://sqlmatches.com) under the community tab to increase the max upload size.
+
+
 ## Setup
 - Visit [SQLMatches.com](https://sqlmatches.com) & create a community to get an API key.
 - Upload the plugin onto your server & load it.
