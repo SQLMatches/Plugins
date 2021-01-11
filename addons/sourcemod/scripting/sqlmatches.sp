@@ -164,8 +164,11 @@ public void OnMapStart() {
 	}
 
 	if (g_cvEnableAnnounce.IntValue == 1) {
+		char versions[3][20];
+		ExplodeString(VERSION, ".", versions, sizeof(versions), sizeof(versions[]));
+
 		char sUrl[1024];
-		Format(sUrl, sizeof(sUrl), "version/%s/", VERSION);
+		Format(sUrl, sizeof(sUrl), "version/%s/%s/%s/", versions[0], versions[1], versions[2]);
 
 		g_Client.Get(sUrl, HTTP_OnMapLoad);
 	}
