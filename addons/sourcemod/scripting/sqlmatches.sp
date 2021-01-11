@@ -202,10 +202,17 @@ void HTTP_OnMapLoad(HTTPResponse response, any value, const char[] error) {
 	char sVersionMessage[66];
 	data.GetString("message", sVersionMessage, sizeof(sVersionMessage));
 
-	CreateTimer(15.0, Timer_PrintVersionMessage, sVersionMessage)
+	DataPack data = new DataPack();
+	data.WriteString(sVersionMessage);
+
+	CreateTimer(15.0, Timer_PrintVersionMessage, data)
 }
 
-void Timer_PrintVersionMessage(Handle timer, const char[] sVersionMessage) {
+void Timer_PrintVersionMessage(Handle timer, DataPack data) {
+	char sVersionMessage[66];
+	data.Reset();
+	data.ReadString(sVersionMessage, sizeof(sVersionMessage));
+
 	CPrintToChatAll("%s{lightred}%s", PREFIX, sVersionMessage);
 }
 
