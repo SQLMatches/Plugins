@@ -5,8 +5,18 @@ Visit your owner panel on [SQLMatches.com](https://sqlmatches.com) under the com
 ## Setup
 - Visit [SQLMatches.com](https://sqlmatches.com) & create a community to get an API key.
 - Upload the plugin onto your server & load it.
+    - [How to download](#downloading-compiled-plugin)
+- Install [extensions](/addons/sourcemod/extensions)
 - Go to `/cfg/sourcemod/sqlmatches.cfg` & set your API key.
+    - [More details of CVARs.](#cvars)
 
+## Downloading compiled plugin
+- ![step 1](https://tinyurl.com/y38tmonn)
+    - Click the green tick.
+    - Then click details.
+- ![step 2](https://tinyurl.com/y3cdvmd6)
+    - Click artifacts.
+    - Then download 'Compiled plugins' & unzip it.
 
 ## CVARs
 #### Set all of these under sqlmatches.cfg
@@ -21,15 +31,6 @@ Visit your owner panel on [SQLMatches.com](https://sqlmatches.com) under the com
     - 1, Upload demo at start of next match.
 - sm_sqlmatches_delete_after_upload
     - Delete demo file after successfully upload.
-
-
-## Downloading compiled plugin
-- ![step 1](https://tinyurl.com/y38tmonn)
-    - Click the green tick.
-    - Then click details.
-- ![step 2](https://tinyurl.com/y3cdvmd6)
-    - Click artifacts.
-    - Then download 'Compiled plugins' & unzip it.
 
 ## Thanks to
 - [The-Doggy](https://github.com/The-Doggy) - Contributor
