@@ -124,7 +124,7 @@ void LoadCvarHttp() {
 	g_cvMatchEndDiscordWebhook.GetString(g_sMatchEndWebhook, sizeof(g_sMatchEndWebhook));
 	g_cvMatchStartDiscordWebhook.GetString(g_sMatchStartWebhook, sizeof(g_sMatchStartWebhook));
 	g_cvRoudEndDiscordWebhook.GetString(g_sRoundEndWebhook, sizeof(g_sRoundEndWebhook));
-	g_cvDiscordEmbedDecimal.GetInt(g_iEmbedDecimalColor, sizeof(g_iEmbedDecimalColor));
+	g_cvDiscordEmbedDecimal.GetString(g_iEmbedDecimalColor, sizeof(g_iEmbedDecimalColor));
 	g_cvDiscordName.GetString(sDiscordName, sizeof(sDiscordName));
 
 	if (strlen(sApiUrl) == 0) {
@@ -182,7 +182,7 @@ public void OnPluginStart() {
 	g_cvMatchEndDiscordWebhook = CreateConVar("sm_sqlmatches_discord_match_end", "", "Discord webhook to push at match end, leave blank to disable.", FCVAR_PROTECTED);
 	g_cvMatchStartDiscordWebhook = CreateConVar("sm_sqlmatches_discord_match_start", "", "Discord webhook to push at match start, leave blank to disable.", FCVAR_PROTECTED);
 	g_cvRoudEndDiscordWebhook = CreateConVar("sm_sqlmatches_discord_round_end", "", "Discord webhook to push at round end, leave blank to disable.", FCVAR_PROTECTED);
-	g_cvDiscordEmbedDecimal = CreateConVar("sm_sqlmatches_discord_embed_hex", 10233776, "Decimal color code for embed messages, https://www.binaryhexconverter.com/hex-to-decimal-converter.", FCVAR_PROTECTED);
+	g_cvDiscordEmbedDecimal = CreateConVar("sm_sqlmatches_discord_embed_decimal", "10233776", "Decimal color code for embed messages, https://www.binaryhexconverter.com/hex-to-decimal-converter.", FCVAR_PROTECTED);
 	g_cvDiscordName = CreateConVar("sm_sqlmatches_discord_name", "SQLMatches.com", "Set discord name, please leave as SQLMatches.com if using hosted version.", FCVAR_PROTECTED);
 
 	g_cvApiUrl.AddChangeHook(OnAPIChanged);
