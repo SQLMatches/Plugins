@@ -158,6 +158,10 @@ void LoadCvarHttp() {
 	g_DiscordMatchEndHook.SetUsername(sDiscordName);
 	g_DiscordMatchStartHook.SetUsername(sDiscordName);
 	g_DiscordRoundEndHook.SetUsername(sDiscordName);
+
+	g_DiscordMatchEndHook.SlackMode = false;
+	g_DiscordMatchStartHook.SlackMode = false;
+	g_DiscordRoundEndHook.SlackMode = false;
 }
 
 public void OnPluginStart() {
@@ -182,7 +186,7 @@ public void OnPluginStart() {
 	g_cvMatchEndDiscordWebhook = CreateConVar("sm_sqlmatches_discord_match_end", "", "Discord webhook to push at match end, leave blank to disable.", FCVAR_PROTECTED);
 	g_cvMatchStartDiscordWebhook = CreateConVar("sm_sqlmatches_discord_match_start", "", "Discord webhook to push at match start, leave blank to disable.", FCVAR_PROTECTED);
 	g_cvRoudEndDiscordWebhook = CreateConVar("sm_sqlmatches_discord_round_end", "", "Discord webhook to push at round end, leave blank to disable.", FCVAR_PROTECTED);
-	g_cvDiscordEmbedHex = CreateConVar("sm_sqlmatches_discord_embed_hex", "#00FF3C", "Hex color code for embed messages.", FCVAR_PROTECTED);
+	g_cvDiscordEmbedHex = CreateConVar("sm_sqlmatches_discord_embed_hex", "#9c27b0", "Hex color code for embed messages.", FCVAR_PROTECTED);
 	g_cvDiscordName = CreateConVar("sm_sqlmatches_discord_name", "SQLMatches.com", "Set discord name, please leave as SQLMatches.com if using hosted version.", FCVAR_PROTECTED);
 
 	g_cvApiUrl.AddChangeHook(OnAPIChanged);
@@ -201,7 +205,6 @@ void sendDiscordWebhook(DiscordWebHook discordWebhook , const char[] title) {
 
 	Embed.SetColor(g_sEmbedHexColor);
 	Embed.SetTitle(title);
-	Embed.SetDescription(sDescription);
 
 	discordWebhook.Embed(Embed);
 	discordWebhook.Send();
