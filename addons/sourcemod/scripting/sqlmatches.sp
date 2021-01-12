@@ -56,6 +56,7 @@ ConVar g_cvMatchStartDiscordWebhook;
 ConVar g_cvRoudEndDiscordWebhook;
 ConVar g_cvDiscordName;
 ConVar g_cvDiscordEmbedDecimal;
+ConVar g_cvDiscordAvatar;
 
 HTTPClient g_Client;
 
@@ -114,6 +115,7 @@ void LoadCvarHttp() {
 	char sApiUrl[512];
 
 	char sDiscordName[32];
+	char sDiscordAvatar[512];
 
 	g_cvCommunityName.GetString(g_sCommunityName, sizeof(g_sCommunityName));
 	g_cvFrontendUrl.GetString(g_sFrontendUrl, sizeof(g_sFrontendUrl));
@@ -126,6 +128,7 @@ void LoadCvarHttp() {
 	g_cvRoudEndDiscordWebhook.GetString(g_sRoundEndWebhook, sizeof(g_sRoundEndWebhook));
 	g_cvDiscordEmbedDecimal.GetString(g_sEmbedDecimalColor, sizeof(g_sEmbedDecimalColor));
 	g_cvDiscordName.GetString(sDiscordName, sizeof(sDiscordName));
+	g_cvDiscordAvatar.GetString(sDiscordAvatar, sizeof(sDiscordAvatar));
 
 	if (strlen(sApiUrl) == 0) {
 		LogError("Error: ConVar sm_sqlmatches_url shouldn't be empty.");
@@ -158,6 +161,10 @@ void LoadCvarHttp() {
 	g_DiscordMatchEndHook.SetUsername(sDiscordName);
 	g_DiscordMatchStartHook.SetUsername(sDiscordName);
 	g_DiscordRoundEndHook.SetUsername(sDiscordName);
+	
+	g_DiscordMatchEndHook.SetAvatar(sDiscordAvatar);
+	g_DiscordMatchStartHook.SetAvatar(sDiscordAvatar);
+	g_DiscordRoundEndHook.SetAvatar(sDiscordAvatar);
 }
 
 public void OnPluginStart() {
@@ -184,6 +191,7 @@ public void OnPluginStart() {
 	g_cvRoudEndDiscordWebhook = CreateConVar("sm_sqlmatches_discord_round_end", "", "Discord webhook to push at round end, leave blank to disable.", FCVAR_PROTECTED);
 	g_cvDiscordEmbedDecimal = CreateConVar("sm_sqlmatches_discord_embed_decimal", "10233776", "Decimal color code for embed messages, https://www.binaryhexconverter.com/hex-to-decimal-converter.", FCVAR_PROTECTED);
 	g_cvDiscordName = CreateConVar("sm_sqlmatches_discord_name", "SQLMatches.com", "Set discord name, please leave as SQLMatches.com if using hosted version.", FCVAR_PROTECTED);
+	g_cvDiscordAvatar = CreateConVar("sm_sqlmatches_discord_avatar", "https://i.imgur.com/BgHcSgr.png", "URL to avatar.", FCVAR_PROTECTED);
 
 	g_cvApiUrl.AddChangeHook(OnAPIChanged);
 	g_cvApiKey.AddChangeHook(OnAPIChanged);
