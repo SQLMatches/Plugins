@@ -7,7 +7,7 @@ Visit your owner panel on [SQLMatches.com](https://sqlmatches.com) under the com
 
 ## Setup
 - Visit [SQLMatches.com](https://sqlmatches.com) & create a community to get an API key.
-- Upload the plugins onto your server & load it.
+- Upload the plugins onto your server & load them.
     - [How to download](#downloading-compiled-plugin)
 - Install [extensions](/addons/sourcemod/extensions)
 - Go to `/cfg/sourcemod/sqlmatches.cfg` & set your API key.
