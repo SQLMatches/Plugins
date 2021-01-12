@@ -4,7 +4,7 @@
 
 #include <sourcemod>
 #include <discord>
-#include <SteamWorks>
+#include <steamworks>
 #include <smjansson>
 
 #include "discord/DiscordRequest.sp"
