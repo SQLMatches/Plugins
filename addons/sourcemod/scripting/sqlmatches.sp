@@ -27,6 +27,7 @@
 int g_iCompressionLevel = 9;
 // Please leave this as 2, to help save us storage.
 int g_iMinPlayersNeeded = 1;
+int g_iEmbedDecimalColor;
 
 bool g_bPugSetupAvailable;
 bool g_bGet5Available;
@@ -35,7 +36,6 @@ bool g_bAlreadySwapped;
 char g_sMatchId[38];
 // If a matchIdBefore is given we'll upload it during the match.
 char g_sMatchIdBefore[38];
-char g_sEmbedHexColor[9];
 char g_sFrontendUrl[512];
 char g_sCommunityName[34];
 char g_sMatchEndWebhook[512];
@@ -55,7 +55,7 @@ ConVar g_cvMatchEndDiscordWebhook;
 ConVar g_cvMatchStartDiscordWebhook;
 ConVar g_cvRoudEndDiscordWebhook;
 ConVar g_cvDiscordName;
-ConVar g_cvDiscordEmbedHex;
+ConVar g_cvDiscordEmbedDecimal;
 
 HTTPClient g_Client;
 
@@ -124,7 +124,7 @@ void LoadCvarHttp() {
 	g_cvMatchEndDiscordWebhook.GetString(g_sMatchEndWebhook, sizeof(g_sMatchEndWebhook));
 	g_cvMatchStartDiscordWebhook.GetString(g_sMatchStartWebhook, sizeof(g_sMatchStartWebhook));
 	g_cvRoudEndDiscordWebhook.GetString(g_sRoundEndWebhook, sizeof(g_sRoundEndWebhook));
-	g_cvDiscordEmbedHex.GetString(g_sEmbedHexColor, sizeof(g_sEmbedHexColor));
+	g_cvDiscordEmbedDecimal.GetString(g_iEmbedDecimalColor, sizeof(g_iEmbedDecimalColor));
 	g_cvDiscordName.GetString(sDiscordName, sizeof(sDiscordName));
 
 	if (strlen(sApiUrl) == 0) {
@@ -186,7 +186,7 @@ public void OnPluginStart() {
 	g_cvMatchEndDiscordWebhook = CreateConVar("sm_sqlmatches_discord_match_end", "", "Discord webhook to push at match end, leave blank to disable.", FCVAR_PROTECTED);
 	g_cvMatchStartDiscordWebhook = CreateConVar("sm_sqlmatches_discord_match_start", "", "Discord webhook to push at match start, leave blank to disable.", FCVAR_PROTECTED);
 	g_cvRoudEndDiscordWebhook = CreateConVar("sm_sqlmatches_discord_round_end", "", "Discord webhook to push at round end, leave blank to disable.", FCVAR_PROTECTED);
-	g_cvDiscordEmbedHex = CreateConVar("sm_sqlmatches_discord_embed_hex", "#9c27b0", "Hex color code for embed messages.", FCVAR_PROTECTED);
+	g_cvDiscordEmbedDecimal = CreateConVar("sm_sqlmatches_discord_embed_hex", 10233776, "Decimal color code for embed messages, https://www.binaryhexconverter.com/hex-to-decimal-converter.", FCVAR_PROTECTED);
 	g_cvDiscordName = CreateConVar("sm_sqlmatches_discord_name", "SQLMatches.com", "Set discord name, please leave as SQLMatches.com if using hosted version.", FCVAR_PROTECTED);
 
 	g_cvApiUrl.AddChangeHook(OnAPIChanged);
@@ -198,11 +198,12 @@ public void OnPluginStart() {
 }
 
 void sendDiscordWebhook(DiscordWebHook discordWebhook , const char[] title) {
-	char sDescription[64];
+	char sDescription[102];
 	Format(sDescription, sizeof(sDescription), "[Scoreboard](%s/c/%s/scoreboard/%s)", g_sFrontendUrl, g_sCommunityName, g_sMatchId);
 
 	MessageEmbed Embed = new MessageEmbed();
 
+	Embed.SetColor(g_iEmbedDecimalColor);
 	Embed.SetTitle(title);
 	Embed.SetDescription(sDescription);
 
@@ -394,10 +395,6 @@ void CreateMatch() {
 
 	// Delete handle
 	delete json;
-
-	if (!StrEqual(g_sMatchStartWebhook, "")) {
-		sendDiscordWebhook(g_DiscordMatchStartHook, "Match started!");
-	}
 }
 
 void HTTP_OnCreateMatch(HTTPResponse response, any value, const char[] error) {
@@ -428,6 +425,10 @@ void HTTP_OnCreateMatch(HTTPResponse response, any value, const char[] error) {
 	PrintToServer("%s Match %s created successfully.", PREFIX, g_sMatchId);
 	CPrintToChatAll("%sMatch has been {green}created", PREFIX);
 	ServerCommand("tv_record \"%s\"", g_sMatchId);
+
+	if (!StrEqual(g_sMatchStartWebhook, "")) {
+		sendDiscordWebhook(g_DiscordMatchStartHook, "Match started!");
+	}
 }
 
 void UpdateMatch(int team_1_score = -1, int team_2_score = -1, bool dontUpdate = false, int team_1_side = -1, int team_2_side = -1, bool end = false) {
