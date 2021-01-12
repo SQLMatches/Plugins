@@ -46,6 +46,8 @@ Visit your owner panel on [SQLMatches.com](https://sqlmatches.com) under the com
     - Decimal color code for embed messages, [Hex to decimal converter](https://www.binaryhexconverter.com/hex-to-decimal-converter).
 - sm_sqlmatches_discord_name
     - Set discord name, please leave as SQLMatches.com if using hosted version.
+- sm_sqlmatches_discord_avatar
+    - URL to avatar.
 
 ## Thanks to
 - [The-Doggy](https://github.com/The-Doggy) - Contributor
