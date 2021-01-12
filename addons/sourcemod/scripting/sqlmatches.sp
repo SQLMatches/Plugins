@@ -27,7 +27,6 @@
 int g_iCompressionLevel = 9;
 // Please leave this as 2, to help save us storage.
 int g_iMinPlayersNeeded = 1;
-int g_iEmbedDecimalColor;
 
 bool g_bPugSetupAvailable;
 bool g_bGet5Available;
@@ -41,6 +40,7 @@ char g_sCommunityName[34];
 char g_sMatchEndWebhook[512];
 char g_sMatchStartWebhook[512];
 char g_sRoundEndWebhook[512];
+char g_sEmbedDecimalColor[10];
 
 ConVar g_cvApiUrl;
 ConVar g_cvApiKey;
@@ -124,7 +124,7 @@ void LoadCvarHttp() {
 	g_cvMatchEndDiscordWebhook.GetString(g_sMatchEndWebhook, sizeof(g_sMatchEndWebhook));
 	g_cvMatchStartDiscordWebhook.GetString(g_sMatchStartWebhook, sizeof(g_sMatchStartWebhook));
 	g_cvRoudEndDiscordWebhook.GetString(g_sRoundEndWebhook, sizeof(g_sRoundEndWebhook));
-	g_cvDiscordEmbedDecimal.GetString(g_iEmbedDecimalColor, sizeof(g_iEmbedDecimalColor));
+	g_cvDiscordEmbedDecimal.GetString(g_sEmbedDecimalColor, sizeof(g_sEmbedDecimalColor));
 	g_cvDiscordName.GetString(sDiscordName, sizeof(sDiscordName));
 
 	if (strlen(sApiUrl) == 0) {
@@ -199,7 +199,7 @@ void sendDiscordWebhook(DiscordWebHook discordWebhook , const char[] title) {
 
 	MessageEmbed Embed = new MessageEmbed();
 
-	Embed.SetColor(g_iEmbedDecimalColor);
+	Embed.SetColor(g_sEmbedDecimalColor);
 	Embed.SetTitle(title);
 	Embed.SetDescription(sDescription);
 
