@@ -26,7 +26,7 @@
 // Keep compression as 9.
 int g_iCompressionLevel = 9;
 // Please leave this as 2, to help save us storage.
-int g_iMinPlayersNeeded = 1;
+int g_iMinPlayersNeeded = 2;
 
 bool g_bPugSetupAvailable;
 bool g_bGet5Available;
