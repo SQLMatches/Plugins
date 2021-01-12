@@ -224,11 +224,11 @@ void sendDiscordWebhook(DiscordWebHook discordWebhook , const char[] title) {
 	char sTeam1Players[500];
 	char sTeam2Players[500];
 
-	for (int i = 0; i < size; i++) {
+	for (int i = 0; i < sizeof(g_PlayerStats); i++) {
 		int Client = g_PlayerStats[i].Index;
 		if (IsValidClient(Client)) {
 			char formattedName[44] = "";
-			Format(formattedName, sizeof(formattedName), "%s\n", players[i].Username);
+			Format(formattedName, sizeof(formattedName), "%s\n", g_PlayerStats[Client].Username);
 
 			if (GetClientTeam(Client) == CS_TEAM_CT) {
 				StrCat(sTeam1Players, sizeof(sTeam1Players), formattedName);
@@ -716,19 +716,19 @@ stock JSONArray GetPlayersJson(const MatchUpdatePlayer[] players, int size) {
 		if(IsValidClient(Client)) {
 			JSONObject player = new JSONObject();
 
-			player.SetString("name", players[i].Username);
-			player.SetString("steam_id", players[i].SteamID);
-			player.SetInt("team", players[i].Team);
-			player.SetBool("alive", players[i].Alive);
-			player.SetInt("ping", players[i].Ping);
-			player.SetInt("kills", players[i].Kills);
-			player.SetInt("headshots", players[i].Headshots);
-			player.SetInt("assists", players[i].Assists);
-			player.SetInt("deaths", players[i].Deaths);
-			player.SetInt("shots_fired", players[i].ShotsFired);
-			player.SetInt("shots_hit", players[i].ShotsHit);
-			player.SetInt("mvps", players[i].MVPs);
-			player.SetInt("score", players[i].Score);
+			player.SetString("name", players[Client].Username);
+			player.SetString("steam_id", players[Client].SteamID);
+			player.SetInt("team", players[Client].Team);
+			player.SetBool("alive", players[Client].Alive);
+			player.SetInt("ping", players[Client].Ping);
+			player.SetInt("kills", players[Client].Kills);
+			player.SetInt("headshots", players[Client].Headshots);
+			player.SetInt("assists", players[Client].Assists);
+			player.SetInt("deaths", players[Client].Deaths);
+			player.SetInt("shots_fired", players[Client].ShotsFired);
+			player.SetInt("shots_hit", players[Client].ShotsHit);
+			player.SetInt("mvps", players[Client].MVPs);
+			player.SetInt("score", players[Client].Score);
 			player.SetBool("disconnected", IsClientInGame(Client));
 
 			json.Push(player);
