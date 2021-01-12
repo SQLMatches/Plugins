@@ -199,14 +199,47 @@ void sendDiscordWebhook(DiscordWebHook discordWebhook , const char[] title) {
 		return;
 	}
 
-	char sDescription[102];
-	Format(sDescription, sizeof(sDescription), "[Scoreboard](%s/c/%s/scoreboard/%s)", g_sFrontendUrl, g_sCommunityName, g_sMatchId);
+	char sMap[24];
+	GetCurrentMap(sMap, sizeof(sMap));
+
+	char sDescription[200];
+	Format(
+		sDescription,
+		sizeof(sDescription),
+		"**Score:** %i | %i \n**Map:** %s \n\n[Scoreboard](%s/c/%s/scoreboard/%s)",
+		CS_GetTeamScore(CS_TEAM_CT),
+		CS_GetTeamScore(CS_TEAM_T),
+		sMap,
+		g_sFrontendUrl,
+		g_sCommunityName,
+		g_sMatchId
+	);
 
 	MessageEmbed Embed = new MessageEmbed();
 
 	Embed.SetColor(g_sEmbedDecimalColor);
 	Embed.SetTitle(title);
 	Embed.SetDescription(sDescription);
+
+	char sTeam1Players[500];
+	char sTeam2Players[500];
+
+	for (int i = 0; i < size; i++) {
+		int Client = players[i].Index;
+		if (IsValidClient(Client)) {
+			char formattedName[44];
+			Format(formattedName, sizeof(formattedName), "%s\n", players[i].Username);
+
+			if (GetClientTeam(Client) == CS_TEAM_CT) {
+				StrCat(sTeam1Players, sizeof(sTeam1Players), formattedName);
+			} else {
+				StrCat(sTeam2Players, sizeof(sTeam2Players), formattedName);
+			}
+		}
+	}
+
+	Embed.AddField("Team 1", sTeam1Players, false);
+	Embed.AddField("Team 2", sTeam2Players, false);
 
 	discordWebhook.Embed(Embed);
 	discordWebhook.Send();
@@ -657,7 +690,7 @@ stock void UpdatePlayerStats(MatchUpdatePlayer[] players, int size) {
 		if (IsValidClient(Client)) {
 			if (GetClientTeam(Client) == CS_TEAM_CT) {
 				players[Client].Team = 0;
-			} else if(GetClientTeam(Client) == CS_TEAM_T) {
+			} else {
 				players[Client].Team = 1;
 			}
 
