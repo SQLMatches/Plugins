@@ -230,6 +230,9 @@ void sendDiscordWebhook(DiscordWebHook discordWebhook , const char[] title) {
 			char formattedName[44];
 			Format(formattedName, sizeof(formattedName), "%s\n", g_PlayerStats[i].Username);
 
+			CPrintToChatAll(g_PlayerStats[i].Username);
+			CPrintToChatAll(formattedName);
+
 			if (GetClientTeam(Client) == CS_TEAM_CT) {
 				StrCat(sTeam1Players, sizeof(sTeam1Players), formattedName);
 			} else {
