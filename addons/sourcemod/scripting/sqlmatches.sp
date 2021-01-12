@@ -26,7 +26,7 @@
 // Keep compression as 9.
 int g_iCompressionLevel = 9;
 // Please leave this as 2, to help save us storage.
-int g_iMinPlayersNeeded = 1;
+int g_iMinPlayersNeeded = 2;
 
 bool g_bPugSetupAvailable;
 bool g_bGet5Available;
@@ -194,6 +194,11 @@ public void OnPluginStart() {
 }
 
 void sendDiscordWebhook(DiscordWebHook discordWebhook , const char[] title) {
+	// Stops webhook being spammed if all players leave.
+	if (GetRealClientCount() == 0) {
+		return;
+	}
+
 	char sDescription[102];
 	Format(sDescription, sizeof(sDescription), "[Scoreboard](%s/c/%s/scoreboard/%s)", g_sFrontendUrl, g_sCommunityName, g_sMatchId);
 
