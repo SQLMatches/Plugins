@@ -5,6 +5,7 @@
 #include <base64>
 #include <bzip2>
 #include <multicolors>
+#include <discord>
 
 #pragma semicolon 1
 #pragma newdecls required
@@ -34,6 +35,12 @@ bool g_bAlreadySwapped;
 char g_sMatchId[38];
 // If a matchIdBefore is given we'll upload it during the match.
 char g_sMatchIdBefore[38];
+char g_sEmbedHexColor[9];
+char g_sFrontendUrl[512];
+char g_sCommunityName[34];
+char g_sMatchEndWebhook[512];
+char g_sMatchStartWebhook[512];
+char g_sRoundEndWebhook[512];
 
 ConVar g_cvApiUrl;
 ConVar g_cvApiKey;
@@ -41,8 +48,19 @@ ConVar g_cvEnableAutoConfig;
 ConVar g_cvEnableAnnounce;
 ConVar g_cvStartRoundUpload;
 ConVar g_cvDeleteAfterUpload;
+ConVar g_cvFrontendUrl;
+ConVar g_cvCommunityName;
+
+ConVar g_cvMatchEndDiscordWebhook;
+ConVar g_cvMatchStartDiscordWebhook;
+ConVar g_cvRoudEndDiscordWebhook;
+ConVar g_cvDiscordName;
 
 HTTPClient g_Client;
+
+DiscordWebHook g_DiscordMatchEndHook;
+DiscordWebHook g_DiscordMatchStartHook;
+DiscordWebHook g_DiscordRoundEndHook;
 
 enum struct MatchUpdatePlayer {
 	int Index;
@@ -94,8 +112,19 @@ void LoadCvarHttp() {
 	char sBasicAuth[156];
 	char sApiUrl[512];
 
+	char sDiscordName[32];
+
+	g_cvCommunityName.GetString(g_sCommunityName, sizeof(g_sCommunityName));
+	g_cvFrontendUrl.GetString(g_sFrontendUrl, sizeof(g_sFrontendUrl));
+
 	g_cvApiKey.GetString(sApiKey, sizeof(sApiKey));
 	g_cvApiUrl.GetString(sApiUrl, sizeof(sApiUrl));
+
+	g_cvMatchEndDiscordWebhook.GetString(g_sMatchEndWebhook, sizeof(g_sMatchEndWebhook));
+	g_cvMatchStartDiscordWebhook.GetString(g_sMatchStartWebhook, sizeof(g_sMatchStartWebhook));
+	g_cvRoudEndDiscordWebhook.GetString(g_sRoundEndWebhook, sizeof(g_sRoundEndWebhook));
+	g_cvDiscordEmbedHex.GetString(g_sEmbedHexColor, sizeof(g_sEmbedHexColor));
+	g_cvDiscordName.GetString(sDiscordName, sizeof(sDiscordName));
 
 	if (strlen(sApiUrl) == 0) {
 		LogError("Error: ConVar sm_sqlmatches_url shouldn't be empty.");
@@ -119,6 +148,15 @@ void LoadCvarHttp() {
 	g_Client.FollowLocation = true;
 	g_Client.ConnectTimeout = 300;
 	g_Client.Timeout = 600;
+
+	// Create Discord Webhook Client.
+	DiscordWebHook g_DiscordMatchEndHook = new DiscordWebHook(g_sMatchEndWebhook);
+	DiscordWebHook g_DiscordMatchStartHook = new DiscordWebHook(g_sMatchStartWebhook);
+	DiscordWebHook g_DiscordRoundEndHook = new DiscordWebHook(g_sRoundEndWebhook);
+
+	g_DiscordMatchEndHook.SetUsername(sDiscordName);
+	g_DiscordMatchStartHook.SetUsername(sDiscordName);
+	g_DiscordRoundEndHook.SetUsername(sDiscordName);
 }
 
 public void OnPluginStart() {
@@ -132,11 +170,19 @@ public void OnPluginStart() {
 
 	// Register ConVars
 	g_cvApiKey = CreateConVar("sm_sqlmatches_key", "", "API key for sqlmatches API", FCVAR_PROTECTED);
+	g_cvCommunityName = CreateConVar("sm_sqlmatches_community_name", "", "Community name", FCVAR_PROTECTED);
 	g_cvApiUrl = CreateConVar("sm_sqlmatches_url", "https://sqlmatches.com/api", "URL of sqlmatches base API route.", FCVAR_PROTECTED);
+	g_cvFrontendUrl = CreateConVar("sm_sqlmatches_frontend_url", "https://sqlmatches.com", "Frontend URL for SQLMatches.", FCVAR_PROTECTED);
 	g_cvEnableAutoConfig = CreateConVar("sm_sqlmatches_autoconfig", "1", "Used to auto config.", FCVAR_PROTECTED);
 	g_cvEnableAnnounce = CreateConVar("sm_sqlmatches_announce", "1", "Show version announce", FCVAR_PROTECTED);
 	g_cvStartRoundUpload = CreateConVar("sm_sqlmatches_start_round_upload", "0", "0 = Upload demo at match end / 1 = Upload demo at start of next match.", FCVAR_PROTECTED);
 	g_cvDeleteAfterUpload = CreateConVar("sm_sqlmatches_delete_after_upload", "1", "Delete demo file locally after upload.", FCVAR_PROTECTED);
+
+	g_cvMatchEndDiscordWebhook = CreateConVar("sm_sqlmatches_discord_match_end", "", "Discord webhook to push at match end, leave blank to disable.", FCVAR_PROTECTED);
+	g_cvMatchStartDiscordWebhook = CreateConVar("sm_sqlmatches_discord_match_start", "", "Discord webhook to push at match start, leave blank to disable.", FCVAR_PROTECTED);
+	g_cvRoudEndDiscordWebhook = CreateConVar("sm_sqlmatches_discord_round_end", "", "Discord webhook to push at round end, leave blank to disable.", FCVAR_PROTECTED);
+	g_cvDiscordEmbedHex = CreateConVar("sm_sqlmatches_discord_embed_hex", "#22212c", "Hex color code for embed messages.", FCVAR_PROTECTED);
+	g_cvDiscordName = CreateConVar("sm_sqlmatches_discord_name", "SQLMatches.com", "Set discord name, please leave as SQLMatches.com if using hosted version.", FCVAR_PROTECTED);
 
 	g_cvApiUrl.AddChangeHook(OnAPIChanged);
 	g_cvApiKey.AddChangeHook(OnAPIChanged);
@@ -144,6 +190,20 @@ public void OnPluginStart() {
 	AutoExecConfig(true, "sqlmatches");
 
 	LoadCvarHttp();
+}
+
+void sendDiscordWebhook(DiscordWebHook discordWebhook , const char[] title) {
+	char sDescription[64];
+	Format(sDescription, sizeof(sDescription), "[Scoreboard](%s/c/%s/scoreboard/%s)", g_sFrontendUrl, g_sCommunityName, g_sMatchId);
+
+	MessageEmbed Embed = new MessageEmbed();
+
+	Embed.SetColor(g_sEmbedHexColor);
+	Embed.SetTitle(title);
+	Embed.SetDescription(sDescription);
+
+	discordWebhook.Embed(Embed);
+	discordWebhook.Send();
 }
 
 public void OnMapStart() {
@@ -330,6 +390,10 @@ void CreateMatch() {
 
 	// Delete handle
 	delete json;
+
+	if (!StrEqual(g_sMatchStartWebhook, "")) {
+		sendDiscordWebhook(g_DiscordMatchStartHook, "Match started!");
+	}
 }
 
 void HTTP_OnCreateMatch(HTTPResponse response, any value, const char[] error) {
@@ -404,6 +468,16 @@ void UpdateMatch(int team_1_score = -1, int team_2_score = -1, bool dontUpdate =
 	// Send request
 	g_Client.Post(sUrl, json, HTTP_OnUpdateMatch);
 	delete json;
+
+	if (!end) {
+		if (!StrEqual(g_sRoundEndWebhook, "")) {
+			sendDiscordWebhook(g_DiscordRoundEndHook, "Round started!");
+		}
+	} else {
+		if (!StrEqual(g_sMatchEndWebhook, "")) {
+			sendDiscordWebhook(g_DiscordMatchEndHook, "Match end!");
+		}
+	}
 }
 
 void HTTP_OnUpdateMatch(HTTPResponse response, any value, const char[] error) {

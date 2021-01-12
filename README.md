@@ -39,6 +39,7 @@ Visit your owner panel on [SQLMatches.com](https://sqlmatches.com) under the com
 - [SirLamer](https://forums.alliedmods.net/showthread.php?t=101764) - [Base64](https://forums.alliedmods.net/showthread.php?t=101764)
 - [thraaawn](https://github.com/thraaawn) - [bzip2](https://github.com/thraaawn/SMbz2)
 - [Bara](https://github.com/Bara) - [multicolors](https://github.com/Bara/Multi-Colors)
+- [Deathknife](https://github.com/Deathknife) - [discord](https://github.com/Deathknife/sourcemod-discord)
 - [SourceMod Include Library](https://github.com/JoinedSenses/SourceMod-IncludeLibrary) - Maintained includes
 - [borzaka](https://github.com/borzaka) - Contributor
 - [b3none](https://github.com/b3none) - Contributor
