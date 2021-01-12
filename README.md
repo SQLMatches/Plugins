@@ -40,7 +40,7 @@ Visit your owner panel on [SQLMatches.com](https://sqlmatches.com) under the com
 - sm_sqlmatches_discord_round_end
     - Discord webhook to push at round end, leave blank to disable.
 - sm_sqlmatches_discord_embed_decimal
-    - Decimal color code for embed messages, [https://www.binaryhexconverter.com/hex-to-decimal-converter](Hex to decimal converter).
+    - Decimal color code for embed messages, (https://www.binaryhexconverter.com/hex-to-decimal-converter)[Hex to decimal converter].
 - sm_sqlmatches_discord_name
     - Set discord name, please leave as SQLMatches.com if using hosted version.
 
