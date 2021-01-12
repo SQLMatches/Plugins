@@ -124,7 +124,7 @@ void LoadCvarHttp() {
 	g_cvMatchEndDiscordWebhook.GetString(g_sMatchEndWebhook, sizeof(g_sMatchEndWebhook));
 	g_cvMatchStartDiscordWebhook.GetString(g_sMatchStartWebhook, sizeof(g_sMatchStartWebhook));
 	g_cvRoudEndDiscordWebhook.GetString(g_sRoundEndWebhook, sizeof(g_sRoundEndWebhook));
-	g_cvDiscordEmbedDecimal.GetString(g_iEmbedDecimalColor, sizeof(g_iEmbedDecimalColor));
+	g_cvDiscordEmbedDecimal.GetInt(g_iEmbedDecimalColor, sizeof(g_iEmbedDecimalColor));
 	g_cvDiscordName.GetString(sDiscordName, sizeof(sDiscordName));
 
 	if (strlen(sApiUrl) == 0) {
@@ -158,10 +158,6 @@ void LoadCvarHttp() {
 	g_DiscordMatchEndHook.SetUsername(sDiscordName);
 	g_DiscordMatchStartHook.SetUsername(sDiscordName);
 	g_DiscordRoundEndHook.SetUsername(sDiscordName);
-
-	g_DiscordMatchEndHook.SlackMode = false;
-	g_DiscordMatchStartHook.SlackMode = false;
-	g_DiscordRoundEndHook.SlackMode = false;
 }
 
 public void OnPluginStart() {
