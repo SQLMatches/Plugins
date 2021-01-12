@@ -227,8 +227,8 @@ void sendDiscordWebhook(DiscordWebHook discordWebhook , const char[] title) {
 	for (int i = 0; i < sizeof(g_PlayerStats); i++) {
 		int Client = g_PlayerStats[i].Index;
 		if (IsValidClient(Client)) {
-			char formattedName[44] = "";
-			Format(formattedName, sizeof(formattedName), "%s\n", g_PlayerStats[Client].Username);
+			char formattedName[44];
+			Format(formattedName, sizeof(formattedName), "%s\n", g_PlayerStats[i].Username);
 
 			if (GetClientTeam(Client) == CS_TEAM_CT) {
 				StrCat(sTeam1Players, sizeof(sTeam1Players), formattedName);
@@ -238,8 +238,17 @@ void sendDiscordWebhook(DiscordWebHook discordWebhook , const char[] title) {
 		}
 	}
 
-	Embed.AddField("Team 1", sTeam1Players, false);
-	Embed.AddField("Team 2", sTeam2Players, false);
+	if (strlen(sTeam1Players) == 0) {
+		Embed.AddField("Team 1", "No players", false);
+	} else {
+		Embed.AddField("Team 1", sTeam1Players, false);
+	}
+
+	if (strlen(sTeam2Players) == 0) {
+		Embed.AddField("Team 2", "No players", false);
+	} else {
+		Embed.AddField("Team 2", sTeam2Players, false);
+	}
 
 	discordWebhook.Embed(Embed);
 	discordWebhook.Send();
@@ -689,9 +698,9 @@ stock void UpdatePlayerStats(MatchUpdatePlayer[] players, int size) {
 		int Client = players[i].Index;
 		if (IsValidClient(Client)) {
 			if (GetClientTeam(Client) == CS_TEAM_CT) {
-				players[Client].Team = 0;
+				players[i].Team = 0;
 			} else {
-				players[Client].Team = 1;
+				players[i].Team = 1;
 			}
 
 			players[Client].Alive = view_as<bool>(GetEntProp(ent, Prop_Send, "m_bAlive", _, Client));
@@ -702,8 +711,8 @@ stock void UpdatePlayerStats(MatchUpdatePlayer[] players, int size) {
 			players[Client].MVPs = GetEntProp(ent, Prop_Send, "m_iMVPs", _, Client);
 			players[Client].Score = GetEntProp(ent, Prop_Send, "m_iScore", _, Client);
 
-			GetClientName(Client, players[Client].Username, sizeof(MatchUpdatePlayer::Username));
-			GetClientAuthId(Client, AuthId_SteamID64, players[Client].SteamID, sizeof(MatchUpdatePlayer::SteamID));
+			GetClientName(Client, players[i].Username, sizeof(MatchUpdatePlayer::Username));
+			GetClientAuthId(Client, AuthId_SteamID64, players[i].SteamID, sizeof(MatchUpdatePlayer::SteamID));
 		}
 	}
 }
@@ -716,19 +725,19 @@ stock JSONArray GetPlayersJson(const MatchUpdatePlayer[] players, int size) {
 		if(IsValidClient(Client)) {
 			JSONObject player = new JSONObject();
 
-			player.SetString("name", players[Client].Username);
-			player.SetString("steam_id", players[Client].SteamID);
-			player.SetInt("team", players[Client].Team);
-			player.SetBool("alive", players[Client].Alive);
-			player.SetInt("ping", players[Client].Ping);
-			player.SetInt("kills", players[Client].Kills);
-			player.SetInt("headshots", players[Client].Headshots);
-			player.SetInt("assists", players[Client].Assists);
-			player.SetInt("deaths", players[Client].Deaths);
-			player.SetInt("shots_fired", players[Client].ShotsFired);
-			player.SetInt("shots_hit", players[Client].ShotsHit);
-			player.SetInt("mvps", players[Client].MVPs);
-			player.SetInt("score", players[Client].Score);
+			player.SetString("name", players[i].Username);
+			player.SetString("steam_id", players[i].SteamID);
+			player.SetInt("team", players[i].Team);
+			player.SetBool("alive", players[i].Alive);
+			player.SetInt("ping", players[i].Ping);
+			player.SetInt("kills", players[i].Kills);
+			player.SetInt("headshots", players[i].Headshots);
+			player.SetInt("assists", players[i].Assists);
+			player.SetInt("deaths", players[i].Deaths);
+			player.SetInt("shots_fired", players[i].ShotsFired);
+			player.SetInt("shots_hit", players[i].ShotsHit);
+			player.SetInt("mvps", players[i].MVPs);
+			player.SetInt("score", players[i].Score);
 			player.SetBool("disconnected", IsClientInGame(Client));
 
 			json.Push(player);
