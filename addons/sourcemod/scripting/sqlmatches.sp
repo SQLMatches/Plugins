@@ -204,7 +204,7 @@ void sendDiscordWebhook(DiscordWebHook discordWebhook , const char[] title) {
 	MessageEmbed Embed = new MessageEmbed();
 
 	Embed.SetColor(g_sEmbedHexColor);
-	Embed.SetTitle(title);
+	Embed.SetDescription(sDescription);
 
 	discordWebhook.Embed(Embed);
 	discordWebhook.Send();
