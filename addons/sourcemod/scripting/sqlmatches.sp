@@ -26,7 +26,7 @@
 // Keep compression as 9.
 int g_iCompressionLevel = 9;
 // Please leave this as 2, to help save us storage.
-int g_iMinPlayersNeeded = 2;
+int g_iMinPlayersNeeded = 1;
 
 bool g_bPugSetupAvailable;
 bool g_bGet5Available;
@@ -182,7 +182,7 @@ public void OnPluginStart() {
 	g_cvMatchEndDiscordWebhook = CreateConVar("sm_sqlmatches_discord_match_end", "", "Discord webhook to push at match end, leave blank to disable.", FCVAR_PROTECTED);
 	g_cvMatchStartDiscordWebhook = CreateConVar("sm_sqlmatches_discord_match_start", "", "Discord webhook to push at match start, leave blank to disable.", FCVAR_PROTECTED);
 	g_cvRoudEndDiscordWebhook = CreateConVar("sm_sqlmatches_discord_round_end", "", "Discord webhook to push at round end, leave blank to disable.", FCVAR_PROTECTED);
-	g_cvDiscordEmbedHex = CreateConVar("sm_sqlmatches_discord_embed_hex", "#22212c", "Hex color code for embed messages.", FCVAR_PROTECTED);
+	g_cvDiscordEmbedHex = CreateConVar("sm_sqlmatches_discord_embed_hex", "#00FF3C", "Hex color code for embed messages.", FCVAR_PROTECTED);
 	g_cvDiscordName = CreateConVar("sm_sqlmatches_discord_name", "SQLMatches.com", "Set discord name, please leave as SQLMatches.com if using hosted version.", FCVAR_PROTECTED);
 
 	g_cvApiUrl.AddChangeHook(OnAPIChanged);
@@ -649,24 +649,24 @@ stock void UpdatePlayerStats(MatchUpdatePlayer[] players, int size) {
 	// Iterate over players array and update values for every client
 	for (int i = 0; i < size; i++) {
 		int Client = players[i].Index;
-		if (!IsValidClient(Client)) continue;
+		if (IsValidClient(Client)) {
+			if (GetClientTeam(Client) == CS_TEAM_CT) {
+				players[Client].Team = 0;
+			} else if(GetClientTeam(Client) == CS_TEAM_T) {
+				players[Client].Team = 1;
+			}
 
-		if (GetClientTeam(Client) == CS_TEAM_CT) {
-			players[Client].Team = 0;
-		} else if(GetClientTeam(Client) == CS_TEAM_T) {
-			players[Client].Team = 1;
+			players[Client].Alive = view_as<bool>(GetEntProp(ent, Prop_Send, "m_bAlive", _, Client));
+			players[Client].Ping = GetEntProp(ent, Prop_Send, "m_iPing", _, Client);
+			players[Client].Kills = GetEntProp(ent, Prop_Send, "m_iKills", _, Client);
+			players[Client].Assists = GetEntProp(ent, Prop_Send, "m_iAssists", _, Client);
+			players[Client].Deaths = GetEntProp(ent, Prop_Send, "m_iDeaths", _, Client);
+			players[Client].MVPs = GetEntProp(ent, Prop_Send, "m_iMVPs", _, Client);
+			players[Client].Score = GetEntProp(ent, Prop_Send, "m_iScore", _, Client);
+
+			GetClientName(Client, players[Client].Username, sizeof(MatchUpdatePlayer::Username));
+			GetClientAuthId(Client, AuthId_SteamID64, players[Client].SteamID, sizeof(MatchUpdatePlayer::SteamID));
 		}
-
-		players[Client].Alive = view_as<bool>(GetEntProp(ent, Prop_Send, "m_bAlive", _, Client));
-		players[Client].Ping = GetEntProp(ent, Prop_Send, "m_iPing", _, Client);
-		players[Client].Kills = GetEntProp(ent, Prop_Send, "m_iKills", _, Client);
-		players[Client].Assists = GetEntProp(ent, Prop_Send, "m_iAssists", _, Client);
-		players[Client].Deaths = GetEntProp(ent, Prop_Send, "m_iDeaths", _, Client);
-		players[Client].MVPs = GetEntProp(ent, Prop_Send, "m_iMVPs", _, Client);
-		players[Client].Score = GetEntProp(ent, Prop_Send, "m_iScore", _, Client);
-
-		GetClientName(Client, players[Client].Username, sizeof(MatchUpdatePlayer::Username));
-		GetClientAuthId(Client, AuthId_SteamID64, players[Client].SteamID, sizeof(MatchUpdatePlayer::SteamID));
 	}
 }
 
@@ -674,26 +674,28 @@ stock JSONArray GetPlayersJson(const MatchUpdatePlayer[] players, int size) {
 	JSONArray json = new JSONArray();
 
 	for(int i = 0; i < size; i++) {
-		if(!IsValidClient(players[i].Index)) continue;
-		JSONObject player = new JSONObject();
+		int Client = players[i].Index;
+		if(IsValidClient(Client)) {
+			JSONObject player = new JSONObject();
 
-		player.SetString("name", players[i].Username);
-		player.SetString("steam_id", players[i].SteamID);
-		player.SetInt("team", players[i].Team);
-		player.SetBool("alive", players[i].Alive);
-		player.SetInt("ping", players[i].Ping);
-		player.SetInt("kills", players[i].Kills);
-		player.SetInt("headshots", players[i].Headshots);
-		player.SetInt("assists", players[i].Assists);
-		player.SetInt("deaths", players[i].Deaths);
-		player.SetInt("shots_fired", players[i].ShotsFired);
-		player.SetInt("shots_hit", players[i].ShotsHit);
-		player.SetInt("mvps", players[i].MVPs);
-		player.SetInt("score", players[i].Score);
-		player.SetBool("disconnected", IsClientInGame(players[i].Index));
+			player.SetString("name", players[i].Username);
+			player.SetString("steam_id", players[i].SteamID);
+			player.SetInt("team", players[i].Team);
+			player.SetBool("alive", players[i].Alive);
+			player.SetInt("ping", players[i].Ping);
+			player.SetInt("kills", players[i].Kills);
+			player.SetInt("headshots", players[i].Headshots);
+			player.SetInt("assists", players[i].Assists);
+			player.SetInt("deaths", players[i].Deaths);
+			player.SetInt("shots_fired", players[i].ShotsFired);
+			player.SetInt("shots_hit", players[i].ShotsHit);
+			player.SetInt("mvps", players[i].MVPs);
+			player.SetInt("score", players[i].Score);
+			player.SetBool("disconnected", IsClientInGame(Client));
 
-		json.Push(player);
-		delete player;
+			json.Push(player);
+			delete player;
+		}
 	}
 
 	return json;
