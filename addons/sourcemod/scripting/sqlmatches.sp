@@ -202,7 +202,7 @@ void sendDiscordWebhook(DiscordWebHook discordWebhook , const char[] title) {
 	char sMap[24];
 	GetCurrentMap(sMap, sizeof(sMap));
 
-	char sDescription[200];
+	char sDescription[300];
 	Format(
 		sDescription,
 		sizeof(sDescription),
@@ -225,9 +225,9 @@ void sendDiscordWebhook(DiscordWebHook discordWebhook , const char[] title) {
 	char sTeam2Players[500];
 
 	for (int i = 0; i < size; i++) {
-		int Client = players[i].Index;
+		int Client = g_PlayerStats[i].Index;
 		if (IsValidClient(Client)) {
-			char formattedName[44];
+			char formattedName[44] = "";
 			Format(formattedName, sizeof(formattedName), "%s\n", players[i].Username);
 
 			if (GetClientTeam(Client) == CS_TEAM_CT) {
