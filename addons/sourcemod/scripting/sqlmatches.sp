@@ -55,6 +55,7 @@ ConVar g_cvMatchEndDiscordWebhook;
 ConVar g_cvMatchStartDiscordWebhook;
 ConVar g_cvRoudEndDiscordWebhook;
 ConVar g_cvDiscordName;
+ConVar g_cvDiscordEmbedHex;
 
 HTTPClient g_Client;
 
@@ -150,9 +151,9 @@ void LoadCvarHttp() {
 	g_Client.Timeout = 600;
 
 	// Create Discord Webhook Client.
-	DiscordWebHook g_DiscordMatchEndHook = new DiscordWebHook(g_sMatchEndWebhook);
-	DiscordWebHook g_DiscordMatchStartHook = new DiscordWebHook(g_sMatchStartWebhook);
-	DiscordWebHook g_DiscordRoundEndHook = new DiscordWebHook(g_sRoundEndWebhook);
+	g_DiscordMatchEndHook = new DiscordWebHook(g_sMatchEndWebhook);
+	g_DiscordMatchStartHook = new DiscordWebHook(g_sMatchStartWebhook);
+	g_DiscordRoundEndHook = new DiscordWebHook(g_sRoundEndWebhook);
 
 	g_DiscordMatchEndHook.SetUsername(sDiscordName);
 	g_DiscordMatchStartHook.SetUsername(sDiscordName);
