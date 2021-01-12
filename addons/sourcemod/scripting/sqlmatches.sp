@@ -239,15 +239,15 @@ void sendDiscordWebhook(DiscordWebHook discordWebhook , const char[] title) {
 	}
 
 	if (strlen(sTeam1Players) == 0) {
-		Embed.AddField("Team 1", "No players", false);
+		Embed.AddField("Team 1", "No players", true);
 	} else {
-		Embed.AddField("Team 1", sTeam1Players, false);
+		Embed.AddField("Team 1", sTeam1Players, true);
 	}
 
 	if (strlen(sTeam2Players) == 0) {
-		Embed.AddField("Team 2", "No players", false);
+		Embed.AddField("Team 2", "No players", true);
 	} else {
-		Embed.AddField("Team 2", sTeam2Players, false);
+		Embed.AddField("Team 2", sTeam2Players, true);
 	}
 
 	discordWebhook.Embed(Embed);
