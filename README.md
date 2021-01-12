@@ -1,6 +1,9 @@
 # Need a larger upload size?
 Visit your owner panel on [SQLMatches.com](https://sqlmatches.com) under the community tab to increase the max upload size.
 
+#### ✨ Help show support by starring this repo! Watch it to get notifications when updated. ✨
+![sellout](https://tinyurl.com/y6br8dx3)
+
 
 ## Setup
 - Visit [SQLMatches.com](https://sqlmatches.com) & create a community to get an API key.
