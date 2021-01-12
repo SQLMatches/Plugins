@@ -26,11 +26,23 @@ Visit your owner panel on [SQLMatches.com](https://sqlmatches.com) under the com
     - Automatically sets up server CVARs for demo recording.
 - sm_sqlmatches_key
     - SQLMatches.com API key.
+- sm_sqlmatches_community_name
+    - Name of community from SQLMatches, needed for Discord webhooks.
 - sm_sqlmatches_start_round_upload
     - 0, Upload demo at match end.
     - 1, Upload demo at start of next match.
 - sm_sqlmatches_delete_after_upload
     - Delete demo file after successfully upload.
+- sm_sqlmatches_discord_match_end
+    - Discord webhook to push at match end, leave blank to disable.
+- sm_sqlmatches_discord_match_start
+    - Discord webhook to push at match start, leave blank to disable.
+- sm_sqlmatches_discord_round_end
+    - Discord webhook to push at round end, leave blank to disable.
+- sm_sqlmatches_discord_embed_hex
+    - Hex color code for embed messages.
+- sm_sqlmatches_discord_name
+    - Set discord name, please leave as SQLMatches.com if using hosted version.
 
 ## Thanks to
 - [The-Doggy](https://github.com/The-Doggy) - Contributor

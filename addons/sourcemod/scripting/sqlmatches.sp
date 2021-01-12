@@ -171,7 +171,7 @@ public void OnPluginStart() {
 
 	// Register ConVars
 	g_cvApiKey = CreateConVar("sm_sqlmatches_key", "", "API key for sqlmatches API", FCVAR_PROTECTED);
-	g_cvCommunityName = CreateConVar("sm_sqlmatches_community_name", "", "Community name", FCVAR_PROTECTED);
+	g_cvCommunityName = CreateConVar("sm_sqlmatches_community_name", "", "Community name (from sqlmatches), needed for Discord webhooks.", FCVAR_PROTECTED);
 	g_cvApiUrl = CreateConVar("sm_sqlmatches_url", "https://sqlmatches.com/api", "URL of sqlmatches base API route.", FCVAR_PROTECTED);
 	g_cvFrontendUrl = CreateConVar("sm_sqlmatches_frontend_url", "https://sqlmatches.com", "Frontend URL for SQLMatches.", FCVAR_PROTECTED);
 	g_cvEnableAutoConfig = CreateConVar("sm_sqlmatches_autoconfig", "1", "Used to auto config.", FCVAR_PROTECTED);
