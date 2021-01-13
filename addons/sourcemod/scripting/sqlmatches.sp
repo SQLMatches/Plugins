@@ -7,8 +7,8 @@
 #include <multicolors>
 #include <discord>
 
-#pragma semicolon 1
-#pragma newdecls required
+#pragma semicolon 	1
+#pragma newdecls 	required
 
 // Please leave the prefix as it is if you're using the hosted version.
 // Storing demos & hosting the site costs money & promoting us helps support us.
