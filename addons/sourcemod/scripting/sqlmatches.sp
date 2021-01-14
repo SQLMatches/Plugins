@@ -178,7 +178,6 @@ public void OnPluginStart() {
 	HookEvent("player_disconnect", Event_PlayerDisconnect, EventHookMode_Pre);
 	HookEvent("cs_win_panel_match", Event_MatchEnd);
 	HookEvent("player_death", Event_PlayerDeath);
-	HookEvent("round_end", Event_RoundEnd);
 
 	// Register ConVars
 	g_cvApiKey = CreateConVar("sm_sqlmatches_key", "", "API key for sqlmatches API", FCVAR_PROTECTED);
@@ -727,14 +726,14 @@ stock void UpdatePlayerStats(MatchUpdatePlayer[] players, int size) {
 			}
 
 			int totalMVPs = GetEntProp(ent, Prop_Send, "m_iMVPs", _, Client);
-			int totalScore = GetEntProp(ent, Prop_Send, "m_iScore", _, i);
+			int totalScore = GetEntProp(ent, Prop_Send, "m_iScore", _, Client);
 
-			players[Client].Alive = view_as<bool>(GetEntProp(ent, Prop_Send, "m_bAlive", _, Client));
-			players[Client].Ping = GetEntProp(ent, Prop_Send, "m_iPing", _, Client);
-			players[Client].MVPs = totalMVPs - players[Client].TotalMVPs;
-			players[Client].TotalMVPs = totalMVPs;
-			players[Client].Score = totalScore - players[Client].TotalScore;
-			players[Client].TotalScore = totalScore;
+			players[i].Alive = view_as<bool>(GetEntProp(ent, Prop_Send, "m_bAlive", _, Client));
+			players[i].Ping = GetEntProp(ent, Prop_Send, "m_iPing", _, Client);
+			players[i].MVPs = totalMVPs - players[i].TotalMVPs;
+			players[i].TotalMVPs = totalMVPs;
+			players[i].Score = totalScore - players[i].TotalScore;
+			players[i].TotalScore = totalScore;
 
 			GetClientName(Client, players[i].Username, sizeof(MatchUpdatePlayer::Username));
 			GetClientAuthId(Client, AuthId_SteamID64, players[i].SteamID, sizeof(MatchUpdatePlayer::SteamID));
