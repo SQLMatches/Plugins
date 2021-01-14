@@ -657,14 +657,14 @@ public void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast
 
 	if (attacker != 0) {
 		if (GetClientTeam(attacker) == GetClientTeam(victim)) {
-			g_PlayerStats[attacker].Kills-+;
+			g_PlayerStats[attacker].Kills = g_PlayerStats[attacker].Kills - 1;
 		} else {
 			g_PlayerStats[attacker].Kills++;
 		}
 	}
 
 	if (assist != 0) {
-		g_PlayerStats[GetClientOfUserId(assistEventInt)].Assists++;
+		g_PlayerStats[GetClientOfUserId(assist)].Assists++;
 	}
 }
 
