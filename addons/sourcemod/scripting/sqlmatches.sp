@@ -702,8 +702,6 @@ public Action Event_PlayerDisconnect(Event event, const char[] name, bool dontBr
 	if (sSteamID[7] != ':') return Plugin_Handled;
 	if (!GetClientAuthId(Client, AuthId_SteamID64, sSteamID, sizeof(sSteamID))) return Plugin_Handled;
 
-	UpdateMatch();
-
 	// Reset client vars
 	ResetVars(Client);
 
@@ -748,7 +746,7 @@ stock void UpdatePlayerStats(MatchUpdatePlayer[] players, int size) {
 
 			players[Client].Alive = view_as<bool>(GetEntProp(ent, Prop_Send, "m_bAlive", _, Client));
 			players[Client].Ping = GetEntProp(ent, Prop_Send, "m_iPing", _, Client);
-			players[Client].MVPs = GetEntProp(ent, Prop_Send, "m_iMVPs", _, Client); // fuck u stupid mvp cunt
+			players[Client].MVPs = GetEntProp(ent, Prop_Send, "m_iMVPs", _, Client);
 
 			GetClientName(Client, players[i].Username, sizeof(MatchUpdatePlayer::Username));
 			GetClientAuthId(Client, AuthId_SteamID64, players[i].SteamID, sizeof(MatchUpdatePlayer::SteamID));
