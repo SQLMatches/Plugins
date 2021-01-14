@@ -334,7 +334,7 @@ void HTTP_OnMapLoad(HTTPResponse response, any value, const char[] error) {
 	DataPack data = new DataPack();
 	data.WriteString(sVersionMessage);
 
-	CreateTimer(15.0, Timer_PrintVersionMessage, data);
+	CreateTimer(25.0, Timer_PrintVersionMessage, data);
 }
 
 public Action Timer_PrintVersionMessage(Handle timer, DataPack data) {
@@ -807,7 +807,7 @@ stock int GetRealClientCount() {
 
 void ResetRoundStats()
 {
-	for(int i = 0; i <= sizeof(g_PlayerStats); i++)
+	for(int i = 0; i < sizeof(g_PlayerStats); i++)
 	{
 		int Client = g_PlayerStats[i].Index;
 
