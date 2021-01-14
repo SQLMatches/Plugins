@@ -78,7 +78,9 @@ enum struct MatchUpdatePlayer {
 	int ShotsFired;
 	int ShotsHit;
 	int MVPs;
+	int TotalMVPs;
 	int Score;
+	int ScoreTotal;
 	bool Disconnected;
 }
 
@@ -401,7 +403,9 @@ void ResetVars(int Client) {
 	g_PlayerStats[Client].ShotsFired = 0;
 	g_PlayerStats[Client].ShotsHit = 0;
 	g_PlayerStats[Client].MVPs = 0;
+	g_PlayerStats[Client].TotalMVPs = 0;
 	g_PlayerStats[Client].Score = 0;
+	g_PlayerStats[Client].TotalScore = 0;
 	g_PlayerStats[Client].Disconnected = false;
 }
 
@@ -653,28 +657,6 @@ public void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast
 	if(event.GetBool("noscope") && event.GetBool("thrusmoke") && event.GetBool("attackerblind")) PrintToChat(GetClientOfUserId(event.GetInt("userid")), "%sGet absolutely rekt son", PREFIX); // LOL
 }
 
-public void Event_RoundEnd(Event event, const char[] name, bool dontBroadcast)
-{
-	if(!InMatch()) return;
-
-	RequestFrame(DelayScore); // this seems to be a consistent way to get the updated score for the round but is untested with a full server so we may need another workaround if it doesn't work
-}
-
-void DelayScore()
-{
-	static int lastScore[MAXPLAYERS + 1];
-
-	int ent = FindEntityByClassname(-1, "cs_player_manager");
-	for(int i = 1; i <= MaxClients; i++)
-	{
-		if(!IsClientInGame(i)) continue;
-
-		int scoreTotal = GetEntProp(ent, Prop_Send, "m_iScore", _, i);
-		g_PlayerStats[i].Score = scoreTotal - lastScore[i];
-		lastScore[i] = scoreTotal;
-	}
-}
-
 public void Event_HalfTime(Event event, const char[] name, bool dontBroadcast) {
 	if (!InMatch()) return;
 
@@ -744,9 +726,15 @@ stock void UpdatePlayerStats(MatchUpdatePlayer[] players, int size) {
 				players[i].Team = 1;
 			}
 
+			int totalMVPs = GetEntProp(ent, Prop_Send, "m_iMVPs", _, Client);
+			int totalScore = GetEntProp(ent, Prop_Send, "m_iScore", _, i);
+
 			players[Client].Alive = view_as<bool>(GetEntProp(ent, Prop_Send, "m_bAlive", _, Client));
 			players[Client].Ping = GetEntProp(ent, Prop_Send, "m_iPing", _, Client);
-			players[Client].MVPs = GetEntProp(ent, Prop_Send, "m_iMVPs", _, Client);
+			players[Client].MVPs = totalMVPs - players[Client].TotalMVPs;
+			players[Client].TotalMVPs = totalMVPs;
+			players[Client].Score = totalScore - players[Client].TotalScore;
+			players[Client].TotalScore = totalScore;
 
 			GetClientName(Client, players[i].Username, sizeof(MatchUpdatePlayer::Username));
 			GetClientAuthId(Client, AuthId_SteamID64, players[i].SteamID, sizeof(MatchUpdatePlayer::SteamID));
@@ -819,5 +807,6 @@ void ResetRoundStats()
 		g_PlayerStats[i].ShotsFired = 0;
 		g_PlayerStats[i].ShotsHit = 0;
 		g_PlayerStats[i].Score = 0;
+		g_PlayerStats[i].MVPs = 0;
 	}
 }
