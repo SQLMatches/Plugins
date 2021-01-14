@@ -80,7 +80,7 @@ enum struct MatchUpdatePlayer {
 	int MVPs;
 	int TotalMVPs;
 	int Score;
-	int ScoreTotal;
+	int TotalScore;
 	bool Disconnected;
 }
 
