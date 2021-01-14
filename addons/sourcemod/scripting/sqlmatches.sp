@@ -274,6 +274,8 @@ public void OnMapStart() {
 
 		// Send request
 		g_Client.Delete(sUrl, HTTP_OnEndMatch);
+
+		g_sMatchId = "";
 	}
 
 	// Upload past match demo on map load.
@@ -362,8 +364,6 @@ void HTTP_OnEndMatch(HTTPResponse response, any value, const char[] error) {
 		LogError("HTTP_OnEndMatch - Invalid status code - Failed! Error: %s", errorInfo);
 		return;
 	}
-
-	g_sMatchId = "";
 }
 
 public void Event_RoundStart(Event event, const char[] name, bool dontBroadcast) {
