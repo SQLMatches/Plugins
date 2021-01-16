@@ -193,7 +193,7 @@ void sendDiscordWebhook(const char[] webhookURl , const char[] title) {
 		return;
 	}
 
-	discordWebhook = new DiscordWebHook(webhookURl);
+	DiscordWebHook discordWebhook = new DiscordWebHook(webhookURl);
 	discordWebhook.SetUsername(g_sDiscordName);
 	discordWebhook.SetAvatar(g_sDiscordAvatar);
 
