@@ -41,6 +41,9 @@ char g_sMatchEndWebhook[512];
 char g_sMatchStartWebhook[512];
 char g_sRoundEndWebhook[512];
 char g_sEmbedDecimalColor[10];
+char g_sDiscordName[32];
+char g_sDiscordAvatar[512];
+
 
 ConVar g_cvApiUrl;
 ConVar g_cvApiKey;
@@ -59,10 +62,6 @@ ConVar g_cvDiscordEmbedDecimal;
 ConVar g_cvDiscordAvatar;
 
 HTTPClient g_Client;
-
-DiscordWebHook g_DiscordMatchEndHook;
-DiscordWebHook g_DiscordMatchStartHook;
-DiscordWebHook g_DiscordRoundEndHook;
 
 enum struct MatchUpdatePlayer {
 	int Index;
@@ -116,9 +115,6 @@ void LoadCvarHttp() {
 	char sBasicAuth[156];
 	char sApiUrl[512];
 
-	char sDiscordName[32];
-	char sDiscordAvatar[512];
-
 	g_cvCommunityName.GetString(g_sCommunityName, sizeof(g_sCommunityName));
 	g_cvFrontendUrl.GetString(g_sFrontendUrl, sizeof(g_sFrontendUrl));
 
@@ -129,8 +125,8 @@ void LoadCvarHttp() {
 	g_cvMatchStartDiscordWebhook.GetString(g_sMatchStartWebhook, sizeof(g_sMatchStartWebhook));
 	g_cvRoudEndDiscordWebhook.GetString(g_sRoundEndWebhook, sizeof(g_sRoundEndWebhook));
 	g_cvDiscordEmbedDecimal.GetString(g_sEmbedDecimalColor, sizeof(g_sEmbedDecimalColor));
-	g_cvDiscordName.GetString(sDiscordName, sizeof(sDiscordName));
-	g_cvDiscordAvatar.GetString(sDiscordAvatar, sizeof(sDiscordAvatar));
+	g_cvDiscordName.GetString(g_sDiscordName, sizeof(g_sDiscordName));
+	g_cvDiscordAvatar.GetString(g_sDiscordAvatar, sizeof(g_sDiscordAvatar));
 
 	if (strlen(sApiUrl) == 0) {
 		LogError("Error: ConVar sm_sqlmatches_url shouldn't be empty.");
@@ -154,19 +150,6 @@ void LoadCvarHttp() {
 	g_Client.FollowLocation = true;
 	g_Client.ConnectTimeout = 300;
 	g_Client.Timeout = 600;
-
-	// Create Discord Webhook Client.
-	g_DiscordMatchEndHook = new DiscordWebHook(g_sMatchEndWebhook);
-	g_DiscordMatchStartHook = new DiscordWebHook(g_sMatchStartWebhook);
-	g_DiscordRoundEndHook = new DiscordWebHook(g_sRoundEndWebhook);
-
-	g_DiscordMatchEndHook.SetUsername(sDiscordName);
-	g_DiscordMatchStartHook.SetUsername(sDiscordName);
-	g_DiscordRoundEndHook.SetUsername(sDiscordName);
-	
-	g_DiscordMatchEndHook.SetAvatar(sDiscordAvatar);
-	g_DiscordMatchStartHook.SetAvatar(sDiscordAvatar);
-	g_DiscordRoundEndHook.SetAvatar(sDiscordAvatar);
 }
 
 public void OnPluginStart() {
@@ -204,11 +187,15 @@ public void OnPluginStart() {
 	LoadCvarHttp();
 }
 
-void sendDiscordWebhook(DiscordWebHook discordWebhook , const char[] title) {
+void sendDiscordWebhook(const char[] webhookURl , const char[] title) {
 	// Stops webhook being spammed if all players leave.
 	if (GetRealClientCount() == 0) {
 		return;
 	}
+
+	discordWebhook = new DiscordWebHook(webhookURl);
+	discordWebhook.SetUsername(g_sDiscordName);
+	discordWebhook.SetAvatar(g_sDiscordAvatar);
 
 	char sMap[24];
 	GetCurrentMap(sMap, sizeof(sMap));
@@ -263,6 +250,9 @@ void sendDiscordWebhook(DiscordWebHook discordWebhook , const char[] title) {
 
 	discordWebhook.Embed(Embed);
 	discordWebhook.Send();
+
+	delete Embed;
+	delete discordWebhook;
 }
 
 public void OnMapStart() {
@@ -484,7 +474,7 @@ void HTTP_OnCreateMatch(HTTPResponse response, any value, const char[] error) {
 	ServerCommand("tv_record \"%s\"", g_sMatchId);
 
 	if (!StrEqual(g_sMatchStartWebhook, "")) {
-		sendDiscordWebhook(g_DiscordMatchStartHook, "Match started!");
+		sendDiscordWebhook(g_sMatchStartWebhook, "Match started!");
 	}
 }
 
@@ -534,11 +524,11 @@ void UpdateMatch(int team_1_score = -1, int team_2_score = -1, bool dontUpdate =
 
 	if (!end) {
 		if (!StrEqual(g_sRoundEndWebhook, "")) {
-			sendDiscordWebhook(g_DiscordRoundEndHook, "Round started!");
+			sendDiscordWebhook(g_sRoundEndWebhook, "Round started!");
 		}
 	} else {
 		if (!StrEqual(g_sMatchEndWebhook, "")) {
-			sendDiscordWebhook(g_DiscordMatchEndHook, "Match end!");
+			sendDiscordWebhook(g_sMatchEndWebhook, "Match end!");
 		}
 	}
 }
