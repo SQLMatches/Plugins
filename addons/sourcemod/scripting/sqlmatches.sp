@@ -187,7 +187,7 @@ public void OnPluginStart() {
 	LoadCvarHttp();
 }
 
-void sendDiscordWebhook(const char[] webhookURl , const char[] title) {
+void sendDiscordWebhook(char[] webhookURl , char[] title) {
 	// Stops webhook being spammed if all players leave.
 	if (GetRealClientCount() == 0) {
 		return;
@@ -251,7 +251,6 @@ void sendDiscordWebhook(const char[] webhookURl , const char[] title) {
 	discordWebhook.Embed(Embed);
 	discordWebhook.Send();
 
-	delete Embed;
 	delete discordWebhook;
 }
 
