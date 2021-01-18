@@ -20,7 +20,7 @@
 #define NAME 		"SQLMatches"
 #define AUTHORS		"The Doggy, ErikMinekus, WardPearce"
 #define DESC		"SQLMatches is a completely free & open source CS:GO match statistics & demo recording tool."
-#define VERSION 	"1.1.0"
+#define VERSION 	"1.1.1"
 #define URL			"https://sqlmatches.com"
 
 // Keep compression as 9.
@@ -28,8 +28,6 @@ int g_iCompressionLevel = 9;
 // Please leave this as 2, to help save us storage.
 int g_iMinPlayersNeeded = 2;
 
-bool g_bPugSetupAvailable;
-bool g_bGet5Available;
 bool g_bAlreadySwapped;
 
 char g_sMatchId[38];
@@ -91,21 +89,6 @@ public Plugin myinfo = {
 	description = DESC,
 	version = VERSION,
 	url = URL
-}
-
-public void OnAllPluginsLoaded() {
-	g_bPugSetupAvailable = LibraryExists("pugsetup");
-	g_bGet5Available = LibraryExists("get5");
-}
-
-public void OnLibraryAdded(const char[] name) {
-	if (StrEqual(name, "pugsetup")) g_bPugSetupAvailable = true;
-	if (StrEqual(name, "get5")) g_bGet5Available = true;
-}
-
-public void OnLibraryRemoved(const char[] name) {
-	if (StrEqual(name, "pugsetup")) g_bPugSetupAvailable = false;
-	if (StrEqual(name, "get5")) g_bGet5Available = false;
 }
 
 void LoadCvarHttp() {
@@ -412,14 +395,8 @@ void CreateMatch() {
 	char sMap[24];
 	JSONObject json = new JSONObject();
 
-	// Set names if pugsetup or get5 are available
-	if (g_bGet5Available || g_bPugSetupAvailable) {
-		FindConVar("mp_teamname_1").GetString(sTeamNameCT, sizeof(sTeamNameCT));
-		FindConVar("mp_teamname_2").GetString(sTeamNameT, sizeof(sTeamNameT));
-	} else {
-		GetTeamName(CS_TEAM_CT, sTeamNameCT, sizeof(sTeamNameCT));
-		GetTeamName(CS_TEAM_T, sTeamNameT, sizeof(sTeamNameT));
-	}
+	GetTeamName(CS_TEAM_CT, sTeamNameCT, sizeof(sTeamNameCT));
+	GetTeamName(CS_TEAM_T, sTeamNameT, sizeof(sTeamNameT));
 
 	json.SetString("team_1_name", sTeamNameCT);
 	json.SetString("team_2_name", sTeamNameT);
