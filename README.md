@@ -10,6 +10,7 @@ Visit your owner panel on [SQLMatches.com](https://sqlmatches.com) under the com
 - Upload the plugins onto your server & load them.
     - [How to download](#downloading-compiled-plugin)
 - Install [extensions](/addons/sourcemod/extensions)
+- Install [configs](/addons/sourcemod/configs)
 - Make sure to set these CVARs.
     - `tv_enable 1`
     - `tv_autorecord 0`
