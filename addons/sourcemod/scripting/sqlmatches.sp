@@ -419,14 +419,7 @@ public void OnClientPutInServer(int Client) {
 	g_PlayerStats[Client].Index = Client;
 	GetClientName(Client, g_PlayerStats[Client].Username, sizeof(MatchUpdatePlayer::Username));
 
-	int realCount = GetRealClientCount();
-
-	// Avoid spamming server on map load.
-	if (CS_GetTeamScore(CS_TEAM_CT) > 1 || CS_GetTeamScore(CS_TEAM_T) > 1) {
-		UpdateServer(.players = realCount);
-	} else if (realCount == 0) {
-		UpdateServer(.players = realCount + 1);
-	}
+	UpdateServer(.players = GetRealClientCount() + 1);
 }
 
 void ResetVars(int Client) {
