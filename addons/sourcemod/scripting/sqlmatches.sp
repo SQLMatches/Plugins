@@ -1,4 +1,5 @@
 #include <sourcemod>
+#include <SteamWorks>
 #include <sdktools>
 #include <cstrike>
 #include <ripext>
@@ -20,7 +21,7 @@
 #define NAME 		"SQLMatches"
 #define AUTHORS		"The Doggy, ErikMinekus, WardPearce"
 #define DESC		"SQLMatches is a completely free & open source CS:GO match statistics & demo recording tool."
-#define VERSION 	"1.1.1"
+#define VERSION 	"1.1.2"
 #define URL			"https://sqlmatches.com"
 
 // Keep compression as 9.
@@ -51,6 +52,7 @@ ConVar g_cvStartRoundUpload;
 ConVar g_cvDeleteAfterUpload;
 ConVar g_cvFrontendUrl;
 ConVar g_cvCommunityName;
+ConVar g_cvDisableEndOfRoundMessage;
 
 ConVar g_cvMatchEndDiscordWebhook;
 ConVar g_cvMatchStartDiscordWebhook;
@@ -152,6 +154,7 @@ public void OnPluginStart() {
 	g_cvFrontendUrl = CreateConVar("sm_sqlmatches_frontend_url", "https://sqlmatches.com", "Frontend URL for SQLMatches.", FCVAR_PROTECTED);
 	g_cvEnableAutoConfig = CreateConVar("sm_sqlmatches_autoconfig", "1", "Used to auto config.", FCVAR_PROTECTED);
 	g_cvEnableAnnounce = CreateConVar("sm_sqlmatches_announce", "1", "Show version announce", FCVAR_PROTECTED);
+	g_cvDisableEndOfRoundMessage = CreateConVar("sm_sqlmatches_end_of_round_message", "1", "If to show end of round message.", FCVAR_PROTECTED);
 	g_cvStartRoundUpload = CreateConVar("sm_sqlmatches_start_round_upload", "0", "0 = Upload demo at match end / 1 = Upload demo at start of next match.", FCVAR_PROTECTED);
 	g_cvDeleteAfterUpload = CreateConVar("sm_sqlmatches_delete_after_upload", "1", "Delete demo file locally after upload.", FCVAR_PROTECTED);
 
@@ -237,6 +240,61 @@ void sendDiscordWebhook(char[] webhookURl , char[] title) {
 	delete discordWebhook;
 }
 
+void UpdateServer(int players = -1, int maxPlayers = -1) {
+	JSONObject json = new JSONObject();
+
+	if (players != -1) {
+		json.SetInt("players", players);
+	}
+	if (maxPlayers != -1) {
+		json.SetInt("max_players", maxPlayers);
+	}
+
+	char sMap[24];
+	GetCurrentMap(sMap, sizeof(sMap));
+	json.SetString("map_name", sMap);
+
+	int ip[4];
+	char pieces[4][8], sUrl[32], sPort[32];
+	FindConVar("hostport").GetString(sPort, sizeof(sPort));
+	SteamWorks_GetPublicIP(ip);
+
+	IntToString(ip[0], pieces[0], sizeof(pieces[]));
+	IntToString(ip[1], pieces[1], sizeof(pieces[]));
+	IntToString(ip[2], pieces[2], sizeof(pieces[]));
+	IntToString(ip[3], pieces[3], sizeof(pieces[]));
+	Format(sUrl, sizeof(sUrl), "server/%s.%s.%s.%s/%s/", pieces[0], pieces[1], pieces[2], pieces[3], sPort);
+
+	// Send request
+	g_Client.Post(sUrl, json, HTTP_UpdateServer);
+
+	// Delete handle
+	delete json;
+}
+
+void HTTP_UpdateServer(HTTPResponse response, any value, const char[] error) {
+	if (strlen(error) > 0) {
+		LogError("HTTP_UpdateServer - Error string - Failed! Error: %s", error);
+		return;
+	}
+
+	if (response.Data == null) {
+		// Invalid JSON response
+		return;
+	}
+
+	// Log errors if any occurred
+	if (response.Status != HTTPStatus_OK) {
+		// Get response data
+		JSONObject responseData = view_as<JSONObject>(response.Data);
+
+		char errorInfo[1024];
+		responseData.GetString("error", errorInfo, sizeof(errorInfo));
+		LogError("HTTP_UpdateServer - Invalid status code - Failed! Error: %s", errorInfo);
+		return;
+	}
+}
+
 public void OnMapStart() {
 	// End past match if not ended correctly.
 	if (!StrEqual(g_sMatchId, "")) {
@@ -277,6 +335,8 @@ public void OnMapStart() {
 
 		g_Client.Get(sUrl, HTTP_OnMapLoad);
 	}
+
+	UpdateServer(.players = GetRealClientCount(), .maxPlayers = GetMaxHumanPlayers());
 }
 
 void HTTP_OnMapLoad(HTTPResponse response, any value, const char[] error) {
@@ -358,6 +418,15 @@ public void OnClientPutInServer(int Client) {
 	ResetVars(Client);
 	g_PlayerStats[Client].Index = Client;
 	GetClientName(Client, g_PlayerStats[Client].Username, sizeof(MatchUpdatePlayer::Username));
+
+	int realCount = GetRealClientCount();
+
+	// Avoid spamming server on map load.
+	if (CS_GetTeamScore(CS_TEAM_CT) > 1 || CS_GetTeamScore(CS_TEAM_T) > 1) {
+		UpdateServer(.players = realCount);
+	} else if (realCount == 0) {
+		UpdateServer(.players = realCount + 1);
+	}
 }
 
 void ResetVars(int Client) {
@@ -527,7 +596,9 @@ void HTTP_OnUpdateMatch(HTTPResponse response, any value, const char[] error) {
 		return;
 	}
 
-	CPrintToChatAll("%sMatch updated {green}successfully.", PREFIX);
+	if (g_cvDisableEndOfRoundMessage.IntValue == 1) {
+		CPrintToChatAll("%sMatch updated {green}successfully.", PREFIX);
+	}
 }
 
 void UploadDemo(const char[] matchId) {
@@ -651,6 +722,8 @@ public void Event_HalfTime(Event event, const char[] name, bool dontBroadcast) {
 }
 
 public Action Event_PlayerDisconnect(Event event, const char[] name, bool dontBroadcast) {
+	UpdateServer(.players = GetRealClientCount() - 1);
+
 	if (!InMatch()) return Plugin_Continue;
 
 	// If the client isn't valid or isn't currently in a match return
