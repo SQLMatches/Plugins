@@ -1,5 +1,5 @@
 #include <sourcemod>
-#include <SteamWorks>
+#include <steamworks>
 #include <sdktools>
 #include <cstrike>
 #include <ripext>
