@@ -54,6 +54,8 @@
     - Set discord name, please leave as SQLMatches.com if using hosted version.
 - sm_sqlmatches_discord_avatar
     - URL to avatar.
+- sm_sqlmatches_end_of_round_message
+    - Disable SQLMatches' end of round message.
 
 ## Thanks to
 - [The-Doggy](https://github.com/The-Doggy) - Contributor
