@@ -21,7 +21,7 @@
 #define NAME 		"SQLMatches"
 #define AUTHORS		"The Doggy, ErikMinekus, WardPearce"
 #define DESC		"SQLMatches is a completely free & open source CS:GO match statistics & demo recording tool."
-#define VERSION 	"1.1.2"
+#define VERSION 	"1.1.3"
 #define URL			"https://sqlmatches.com"
 
 // Keep compression as 9.
