@@ -683,7 +683,7 @@ public void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast
 
 	int victim = GetClientOfUserId(GetEventInt(event, "userid"));
 	int attacker = GetClientOfUserId(GetEventInt(event, "attacker"));
-	int assist = GetClientOfUserId(GetEventInt(event, "assister"));
+	int assister = GetClientOfUserId(GetEventInt(event, "assister"));
 
 	g_PlayerStats[victim].Deaths++; 
 
@@ -695,8 +695,8 @@ public void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast
 		}
 	}
 
-	if (assist != 0) {
-		g_PlayerStats[GetClientOfUserId(assist)].Assists++;
+	if (assister != 0) {
+		g_PlayerStats[assister].Assists++;
 	}
 }
 
