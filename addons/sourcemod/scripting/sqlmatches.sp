@@ -8,20 +8,20 @@
 #include <multicolors>
 #include <discord>
 
-#pragma semicolon 	1
-#pragma newdecls 	required
+#pragma semicolon	1
+#pragma newdecls	required
 
 // Please leave the prefix as it is if you're using the hosted version.
 // Storing demos & hosting the site costs money & promoting us helps support us.
 // If you're self-hosting, feel more then welcome to change the prefix & anything else.
 #define PREFIX		"{default}[{orchid}SQLMatches.com{default}] "
-#define TEAM_CT 	0
-#define TEAM_T 		1
+#define TEAM_CT		0
+#define TEAM_T		1
 
-#define NAME 		"SQLMatches"
+#define NAME		"SQLMatches"
 #define AUTHORS		"The Doggy, ErikMinekus, WardPearce"
 #define DESC		"SQLMatches is a completely free & open source CS:GO match statistics & demo recording tool."
-#define VERSION 	"1.1.3"
+#define VERSION		"1.1.4"
 #define URL			"https://sqlmatches.com"
 
 // Keep compression as 9.
@@ -568,6 +568,7 @@ void UpdateMatch(int team_1_score = -1, int team_2_score = -1, bool dontUpdate =
 		if (!StrEqual(g_sMatchEndWebhook, "")) {
 			sendDiscordWebhook(g_sMatchEndWebhook, "Match end!");
 		}
+		ServerCommand("tv_stoprecord");
 	}
 }
 
